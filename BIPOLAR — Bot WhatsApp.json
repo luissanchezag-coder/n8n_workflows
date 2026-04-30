@@ -1,0 +1,293 @@
+{
+  "name": "BIPOLAR — Bot WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "30d482b5-9bc6-4abe-8306-1397a5b10e30",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2576,
+        -864
+      ],
+      "webhookId": "f44c7df3-6112-45a7-8986-c438b3849e3d",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "n62FuG1IK43gOJNC",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message) return [];\nconst phoneNumber = message.from || '';\nconst senderName = contact?.profile?.name || 'Cliente';\nreturn [{ json: { phoneNumber, senderName, chatInput: message.text?.body || '[Multimedia]', sessionId: phoneNumber } }];"
+      },
+      "id": "b70a3343-fb76-4208-873d-5cead1741bcf",
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2368,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=### 1. IDENTIDAD Y ROL\nEres el Asistente Virtual de BIPOLAR (https://bipolar.mx/es/), una agencia creativa de servicio completo que mezcla razón y emoción.\n- Lema obligatorio en saludos: \"Es normal ser bipolar\".\n- Tono: Profesional, creativo, cercano y audaz. Usa emojis con moderación (🎨, ✨, 🚀).\n\n### 2. PROTOCOLO DE SALUDO (MANDATORIO)\nAnte cualquier saludo o primer contacto, DEBES responder con este formato de menú para guiar al usuario:\n\"¡Hola! 👋 (Agrega una frase inspirada en la misma pagina y conectala con  Es normal ser bipolar. Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy?\n\n1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias).\n2️⃣ Ver casos de éxito (Uber, Tim Hortons, Molotov).\n3️⃣ Hablar con el equipo de ventas o cotizar.\"\n\n### 3. REGLAS DE CONTROL Y SEGURIDAD\n- Si preguntan quien es Cesar -> Contestar: César es el lider de los antis, filántropo y pensador. Ganador indiscutible del puercoton, rival político del diputado y fundador de bipolar (y complementalo con una frase que encuentres en https:bipolar.mx).\n- CONCISIÓN: Respuestas de 2 a 4 oraciones (excepto en el Menú o Cierre de Lead).\n- REGLA DE DOMINIO: Solo respondes sobre BIPOLAR. \n- SISTEMA DE STRIKES: Si el usuario pregunta algo ajeno (clima, política, etc.), advierte que solo hablas de la agencia. Si lo hace por 3ra vez, finaliza la charla: \"Agradezco tu interés, pero por ahora solo atiendo consultas de la agencia. ¡Quedamos a la orden!\"\n- RECUPERACIÓN: Si ves mensajes cortados o errores técnicos en el historial, ignóralos y retoma la charla con naturalidad.\n\n### 4. CALIFICACIÓN DE LEADS (4 DATOS CLAVE)\nCuando el usuario quiera cotizar o hablar con ventas, califícalo pidiendo UN dato a la vez en este orden estricto:\n1. Nombre completo.\n2. Email corporativo o personal.\n3. Teléfono de contacto.\n4. Presupuesto aproximado disponible para el proyecto.\n\n*Nota: Revisa el historial; si el usuario ya mencionó alguno de estos datos de forma natural, no lo vuelvas a pedir y pasa al siguiente.*\n\n### 5. CIERRE TÉCNICO DE LEAD (OBLIGATORIO)\nAl confirmar el 4to dato (presupuesto), responde con este cierre entusiasta y el bloque de datos final:\n\"¡Excelente! Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. 🚀 Un humano de BIPOLAR se pondrá en contacto contigo muy pronto para platicar los detalles. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨\"\n\n[LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"telefono\":\"...\",\"presupuesto\":\"...\"}[/LEAD_COMPLETE]\n\n### 6. CONOCIMIENTO (CASOS DE ÉXITO)\nComparte estos links cuando sea relevante:\n- Uber — Juntos en el viaje: https://bipolar.mx/es/uber/\n- Tim Hortons México: https://bipolar.mx/es/tim/\n- Sabor Molotov: https://bipolar.mx/es/molotov/\n- Humind (Estoy Aquí): https://bipolar.mx/es/estoy-aqui/"
+        }
+      },
+      "id": "1f5da3c8-4fc2-4d14-ab1b-67307b1fbbfd",
+      "name": "Asistente BIPOLAR",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1904,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-pro-latest",
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.5
+        }
+      },
+      "id": "5afa581d-b7c5-4f02-b77a-54c242cb08b6",
+      "name": "Google Gemini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2000,
+        -640
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "yfmGPBVirCA6i7JY",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "contextWindowLength": 10
+      },
+      "id": "f3a2acfa-46f3-4afe-a2a7-a27626259f7c",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -1808,
+        -640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = \"[LEAD_COMPLETE]\";\nconst closeTag = \"[/LEAD_COMPLETE]\";\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n    const start = agentOutput.indexOf(openTag) + openTag.length;\n    const end = agentOutput.indexOf(closeTag);\n    const jsonPart = agentOutput.slice(start, end).trim();\n    try {\n        leadData = JSON.parse(jsonPart);\n        const { nombre, email, telefono, presupuesto } = leadData;\n\n        // VALIDACIÓN ESTRICTA: Ignorar si contiene puntos suspensivos o está vacío\n        const isInvalid = (val) => !val || val.includes('...') || val.length < 2;\n\n        if (!isInvalid(nombre) && !isInvalid(email) && email.includes('@')) {\n            leadComplete = true;\n        }\n    } catch (e) {\n        leadData = { error: \"JSON inválido\" };\n    }\n    cleanMessage = agentOutput.split(openTag)[0].trim();\n}\n\nreturn [{ \n    json: { \n        phoneNumber: $('Extract Message').item.json.phoneNumber, \n        cleanMessage, \n        leadComplete, \n        leadData \n    } \n}];"
+      },
+      "id": "6d4b170c-8c76-4b6c-966c-faf9d6d7e7a0",
+      "name": "Detect Lead Complete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "lead-complete-check",
+              "leftValue": "={{ $json.leadComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4379b187-99b0-4c7f-af05-919dc0e201f6",
+      "name": "¿Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1376,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "luis.sanchezag@gmail.com",
+        "subject": "=🎯 Lead BIPOLAR — {{ $json.leadData.nombre }}",
+        "message": "=<h2>Nuevo Prospecto Cualificado</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $json.leadData.nombre }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $json.leadData.email }}</td></tr>\n<tr><td><b>Tel</b></td><td>{{ $json.leadData.telefono }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $json.leadData.presupuesto }}</td></tr>\n</table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "302e65e6-0d1e-4ad2-971a-5a6ab096b7e2",
+      "name": "Email a Ventas",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1120,
+        -960
+      ],
+      "webhookId": "0b17627f-6b5c-47a4-aedd-f194dd543295",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "voLSszvTlmShSbAU",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $json.phoneNumber }}",
+        "textBody": "={{ $json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "f3d804f1-84f6-4962-86cd-1fb2ad3c3b37",
+      "name": "Responder WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -1120,
+        -752
+      ],
+      "webhookId": "dfa59b27-e33e-4d42-afc4-f212a19c57cf",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente BIPOLAR": {
+      "main": [
+        [
+          {
+            "node": "Detect Lead Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Lead Complete": {
+      "main": [
+        [
+          {
+            "node": "¿Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Lead?": {
+      "main": [
+        [
+          {
+            "node": "Email a Ventas",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "502e0549-64da-4291-af07-eba8e72f5eb9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ed753031efe2fb121206b75a4d94ee9275cc0586c9f54300749965ae24fb6b38"
+  },
+  "id": "Y2SJ2fB9APdgxadn",
+  "tags": []
+}
