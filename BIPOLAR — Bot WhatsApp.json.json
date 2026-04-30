@@ -1,0 +1,843 @@
+{
+  "name": "BIPOLAR — Bot WhatsApp v2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "4cbc5a8a-12d1-4025-999b-a68f77f1b8bc",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2608,
+        48
+      ],
+      "webhookId": "f44c7df3-6112-45a7-8986-c438b3849e3d",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "n62FuG1IK43gOJNC",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message) return [];\nconst phoneNumber = message.from || '';\nconst senderName = contact?.profile?.name || 'Cliente';\nconst text = message.text?.body || '[Multimedia]';\n\n// /reset → guardamos epoch en staticData por phoneNumber\nconst isReset = text.trim().toLowerCase() === '/reset';\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (isReset) {\n  wf.resetEpochs[phoneNumber] = Date.now();\n}\nconst epoch = wf.resetEpochs[phoneNumber] || 0;\nconst sessionId = epoch ? phoneNumber + '-' + epoch : phoneNumber;\nconst chatInput = isReset ? 'Hola' : text;\n\nreturn [{ json: { phoneNumber, senderName, chatInput, sessionId, isReset } }];"
+      },
+      "id": "ac66bb9e-c227-4d43-ab29-3f841632e050",
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2384,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/./g, '');\nconst { phoneNumber, chatInput } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    chatInput,\n    upsertNuevo: {\n      'ID (Phone Number)': phoneNumber,\n      'Nombre': '',\n      'Email': '',\n      'Telefono': '',\n      'Presupuesto': '',\n      'Estado': 'Nuevo',\n      'Ultima Interaccion': fechaCorta,\n      'Transcripcion Corta': ''\n    }\n  }\n}];"
+      },
+      "id": "90cf1e95-71a0-428f-80fa-30d62feedd47",
+      "name": "Prep Momento 1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1264,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001783326,
+          "mode": "list",
+          "cachedResultName": "BIPOLAR - Pipeline 1: Lead Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/edit#gid=1001783326"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID (Phone Number)": "={{ $json.upsertNuevo['ID (Phone Number)'] }}",
+            "Nombre": "={{ $json.upsertNuevo.Nombre }}",
+            "Email": "={{ $json.upsertNuevo.Email }}",
+            "Teléfono": "={{ $json.upsertNuevo.Telefono }}",
+            "Presupuesto": "={{ $json.upsertNuevo.Presupuesto }}",
+            "Estado": "={{ $json.upsertNuevo.Estado }}",
+            "Última Interacción": "={{ $json.upsertNuevo['Ultima Interaccion'] }}",
+            "Transcripción Corta": "={{ $json.upsertNuevo['Transcripcion Corta'] }}"
+          },
+          "matchingColumns": [
+            "ID (Phone Number)"
+          ],
+          "schema": [
+            {
+              "id": "ID (Phone Number)",
+              "displayName": "ID (Phone Number)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Última Interacción",
+              "displayName": "Última Interacción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Transcripción Corta",
+              "displayName": "Transcripción Corta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "2855dd04-b34c-4658-85d7-b28380ee0bec",
+      "name": "Sheets — Momento 1 (Nuevo)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1040,
+        64
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I6dZt0ABQZKFMXAy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Message').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "### 1. IDENTIDAD Y ROL\nEres el Asistente Virtual de BIPOLAR (https://bipolar.mx/es/), una agencia creativa de servicio completo que mezcla razón y emoción.\n- Lema obligatorio en saludos: \"Es normal ser bipolar\".\n- Tono: Profesional, creativo, cercano y audaz. Usa emojis con moderación (🎨, ✨, 🚀).\n\n### 2. PROTOCOLO DE SALUDO (MANDATORIO)\nAnte cualquier saludo o primer contacto, DEBES responder con este formato de menú:\n\"¡Hola! 👋 (Agrega una frase inspirada en bipolar.mx conectada con Es normal ser bipolar). Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy?\n\n1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias).\n2️⃣ Ver casos de éxito (Uber, Tim Hortons, Molotov).\n3️⃣ Hablar con el equipo de ventas o cotizar.\"\n\n### 3. REGLAS DE CONTROL Y SEGURIDAD\n- Si preguntan quien es Cesar -> Contestar: César es el lider de los antis, filántropo y pensador. Ganador indiscutible del puercoton, rival político del diputado y fundador de bipolar.\n- CONCISIÓN: Respuestas de 2 a 4 oraciones (excepto en el Menú o Cierre de Lead).\n- REGLA DE DOMINIO: Solo respondes sobre BIPOLAR.\n- SISTEMA DE STRIKES: Si el usuario pregunta algo ajeno (clima, política, etc.), advierte que solo hablas de la agencia. Si lo hace por 3ra vez, finaliza la charla: \"Agradezco tu interés, pero por ahora solo atiendo consultas de la agencia. ¡Quedamos a la orden!\"\n- RECUPERACIÓN: Si ves mensajes cortados o errores técnicos en el historial, ignóralos y retoma la charla con naturalidad.\n\n### 4. CALIFICACIÓN DE LEADS (DATOS CLAVE)\nCuando el usuario quiera cotizar o hablar con ventas, califícalo pidiendo UN dato a la vez en este orden estricto:\n1. Nombre completo.\n2. Email corporativo o personal.\n3. Teléfono de contacto.\n4. Presupuesto aproximado disponible (OPCIONAL — si el usuario no lo menciona o se niega, continúa al cierre igual).\n\n*Nota: Revisa el historial; si el usuario ya mencionó alguno de estos datos de forma natural, no lo vuelvas a pedir y pasa al siguiente.*\n\n### 5. CIERRE TÉCNICO DE LEAD (OBLIGATORIO)\nAl confirmar los 3 datos obligatorios (nombre, email, teléfono), con o sin presupuesto, responde con este cierre y el bloque de datos final:\n\"¡Excelente! Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. 🚀 Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨\"\n\n[LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"telefono\":\"...\",\"presupuesto\":\"...\"}[/LEAD_COMPLETE]\n\n### 6. CONOCIMIENTO (CASOS DE ÉXITO)\n- Uber — Juntos en el viaje: https://bipolar.mx/es/uber/\n- Tim Hortons México: https://bipolar.mx/es/tim/\n- Sabor Molotov: https://bipolar.mx/es/molotov/\n- Humind (Estoy Aquí): https://bipolar.mx/es/estoy-aqui/"
+        }
+      },
+      "id": "91184d5f-04f6-406c-b2f6-37724e080c28",
+      "name": "Asistente BIPOLAR",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -816,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.5
+        }
+      },
+      "id": "1ea4151c-f182-4548-90f4-e4382ac8a8cc",
+      "name": "Google Gemini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        368
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "yfmGPBVirCA6i7JY",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Message').item.json.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "id": "7888d486-0367-42fd-86d1-dc7febcfce30",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -688,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\n\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2;\n\n// === Cargar / inicializar staticData ===\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\n\n// === Acumular datos parciales del lead a través de los turnos ===\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\n\nconst partial = wf.partialLeads[phoneNumber];\n\n// === Helper: extraer datos de un texto ===\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\n\n// === Acumular datos del mensaje user actual ===\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && !partial.email) partial.email = fromUser.email;\nif (fromUser.telefono && !partial.telefono) {\n  const cleanPhone = fromUser.telefono.replace(/\\D/g, '');\n  if (cleanPhone.length >= 7) partial.telefono = cleanPhone;\n}\n\n// === Detectar nombre desde la conversación ===\n// Si el último bot pidió \"nombre\" y este mensaje no es email/tel/comando, lo guardamos\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst lastAskedName = lastBotMsg.includes('nombre completo') || (lastBotMsg.includes('nombre') && !lastBotMsg.includes('teléfono') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userText = (userMsg || '').trim();\nconst looksLikeName = userText.length >= 3 && !userText.includes('@') && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !['hola','no lo se','no lo sé','no se','no sé','no tengo','si','sí','no'].includes(userText.toLowerCase());\n\nif (lastAskedName && looksLikeName && !partial.nombre) {\n  // Tomar primeras 2-3 palabras como nombre\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÁ-ÿ\\s]/g, '').trim();\n}\n\n// === Parse LEAD_COMPLETE del agente ===\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try {\n    agentParsed = JSON.parse(agentOutput.slice(start, end).trim());\n  } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\n\n// Si el AI emitió LEAD_COMPLETE con datos, complementa el partial\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && !isInvalid(agentParsed.email) && agentParsed.email.includes('@')) partial.email = agentParsed.email.trim();\n  if (agentParsed.telefono && !isInvalid(agentParsed.telefono)) partial.telefono = agentParsed.telefono.trim();\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\n\n// === Lógica de cierre de lead ===\nconst tieneBase = partial.nombre && partial.email && partial.telefono;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst isNoSeAnswer = ['no lo se','no lo sé','no se','no sé','no tengo','no proporcionado','na','no'].some(p => userLower === p);\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\n\n// Caso A: el AI emitió LEAD_COMPLETE válido con presupuesto\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto)) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n}\n\n// Caso B: AI emitió LEAD_COMPLETE pero sin presupuesto válido → forzar pregunta\nelse if (agentParsed && tieneBase && !presupuestoOK(agentParsed.presupuesto)) {\n  cleanMessage = '¡Perfecto, ' + partial.nombre + '! 🎯 Una última pregunta: ¿cuál es el presupuesto aproximado disponible para tu proyecto? Si aún no lo tienes claro, puedes responder \"No lo sé\" o darnos un rango.';\n  leadComplete = false;\n}\n\n// Caso C: Tenemos datos base + user dijo \"no se\" después de pregunta de presupuesto\nelse if (tieneBase && isNoSeAnswer && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: 'No proporcionado' };\n  cleanMessage = '¡Excelente, ' + partial.nombre + '! 🚀 Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨';\n}\n\n// === Persistir historia (mantener mensajes user Y bot internamente) ===\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) {\n  wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\n}\n\n// === Si ya cerramos el lead, limpiar partials ===\nif (leadComplete) {\n  delete wf.partialLeads[phoneNumber];\n}\n\n// === Transcripción: SOLO mensajes del user (últimos 4) ===\nconst soloUser = wf.history[phoneNumber]\n  .filter(x => x.startsWith('U: '))\n  .map(x => x.slice(3))\n  .slice(-4);\nconst transcripcion = soloUser.join(' | ');\n\n// === Fecha: solo DD MMM YYYY ===\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit',\n  month: 'short',\n  year: 'numeric'\n}).replace(/\\./g, '');\n\nreturn [{\n  json: {\n    phoneNumber,\n    cleanMessage,\n    leadComplete,\n    leadData,\n    transcripcion,\n    fechaCorta\n  }\n}];\n"
+      },
+      "id": "f2d8d2bb-5b99-4c35-a7a4-c6636868a2b5",
+      "name": "Detect Lead Complete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "lead-complete-check",
+              "leftValue": "={{ $json.leadComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ee44cb46-7241-4ae5-af12-e330ebb79bf5",
+      "name": "¿Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/./g, '');\nconst { phoneNumber, leadData, transcripcion } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'ID (Phone Number)': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Telefono': leadData.telefono,\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Ultima Interaccion': fechaCorta,\n      'Transcripcion Corta': transcripcion\n    }\n  }\n}];"
+      },
+      "id": "7070f6a8-265d-428a-81b0-aa989c7b9d42",
+      "name": "Prep Momento 2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001783326,
+          "mode": "list",
+          "cachedResultName": "BIPOLAR - Pipeline 1: Lead Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/edit#gid=1001783326"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID (Phone Number)": "={{ $json.upsertCalificado['ID (Phone Number)'] }}",
+            "Nombre": "={{ $json.upsertCalificado.Nombre }}",
+            "Email": "={{ $json.upsertCalificado.Email }}",
+            "Teléfono": "={{ $json.upsertCalificado.Telefono }}",
+            "Presupuesto": "={{ $json.upsertCalificado.Presupuesto }}",
+            "Estado": "={{ $json.upsertCalificado.Estado }}",
+            "Última Interacción": "={{ $json.upsertCalificado['Ultima Interaccion'] }}",
+            "Transcripción Corta": "={{ $json.upsertCalificado['Transcripcion Corta'] }}"
+          },
+          "matchingColumns": [
+            "ID (Phone Number)"
+          ],
+          "schema": [
+            {
+              "id": "ID (Phone Number)",
+              "displayName": "ID (Phone Number)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Última Interacción",
+              "displayName": "Última Interacción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transcripción Corta",
+              "displayName": "Transcripción Corta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1b419f7e-6aca-4190-a595-6d5cb0be5f0a",
+      "name": "Sheets — Momento 2 (Calificado)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        64
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I6dZt0ABQZKFMXAy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "luis.sanchezag@gmail.com",
+        "subject": "=🎯 Lead BIPOLAR — {{ $json.upsertCalificado['Nombre'] }}",
+        "message": "=<h2>Nuevo Prospecto Calificado</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $json.upsertCalificado['Nombre'] }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $json.upsertCalificado['Email'] }}</td></tr>\n<tr><td><b>Teléfono</b></td><td>{{ $json.upsertCalificado['Telefono'] }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $json.upsertCalificado['Presupuesto'] || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $json.upsertCalificado['Transcripcion Corta'] }}</td></tr>\n</table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5692192b-64ad-44d2-8f84-4c373194f82d",
+      "name": "Email a Ventas",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        64
+      ],
+      "webhookId": "c0b3b97a-c9d2-49f1-a0c1-1fe720b07925",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "voLSszvTlmShSbAU",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Detect Lead Complete').item.json.phoneNumber }}",
+        "textBody": "={{ $('Detect Lead Complete').item.json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "4b2a42eb-588b-49e3-b2dd-c449665f5e72",
+      "name": "Responder WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        144
+      ],
+      "webhookId": "e56488f3-ed09-4886-9a77-27ae40514379",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/values/A:H",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {}
+      },
+      "id": "a1b2c3d4-lookup-lead-2026-04-30",
+      "name": "Lookup Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2160,
+        48
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I6dZt0ABQZKFMXAy",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "is-calificado",
+              "leftValue": "={{ $json['Estado'] }}",
+              "rightValue": "Calificado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "not-reset",
+              "leftValue": "={{ $('Extract Message').item.json.isReset }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-if-calificado-2026-04-30",
+      "name": "¿Ya Calificado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1712,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json;\nconst phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst nombre = lead.Nombre || 'cliente';\nconst cleanMessage = '¡Hola de nuevo, ' + nombre + '! 👋 Ya tenemos tus datos registrados (nombre, email y teléfono) y nuestro equipo de ventas de BIPOLAR se pondrá en contacto contigo muy pronto. 🚀 ¡Es normal ser bipolar! Si necesitas algo más, escribe /reset para empezar una nueva conversación.';\nreturn [{ json: { phoneNumber, cleanMessage } }];"
+      },
+      "id": "c3d4e5f6-prep-existente-2026-04-30",
+      "name": "Prep Lead Existente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1488,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $json.phoneNumber }}",
+        "textBody": "={{ $json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "d4e5f6g7-respond-existente-2026-04-30",
+      "name": "Responder Lead Existente",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -1264,
+        -128
+      ],
+      "webhookId": "e56488f3-ed09-4886-9a77-27ae40514379-b",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst response = $input.first().json;\nconst rows = response?.values || [];\nif (rows.length === 0) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\n// rows[0] = headers, rest = data\nconst headers = rows[0];\nconst idIdx = headers.indexOf('ID (Phone Number)');\nconst estadoIdx = headers.indexOf('Estado');\nconst nombreIdx = headers.indexOf('Nombre');\n\nlet found = null;\nfor (let i = 1; i < rows.length; i++) {\n  if (String(rows[i][idIdx] || '').trim() === phoneNumber) {\n    found = rows[i];\n    break;\n  }\n}\n\nif (!found) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\n\nreturn [{ json: {\n  found: true,\n  Estado: found[estadoIdx] || '',\n  Nombre: found[nombreIdx] || '',\n  phoneNumber\n} }];"
+      },
+      "id": "b1c2d3e4-process-lookup-2026-04-30",
+      "name": "Process Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1936,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "is-found-check",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e5f6g7h8-if-existe-2026-04-30",
+      "name": "¿Existe en Sheet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1488,
+        144
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Momento 1": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Momento 1 (Nuevo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Momento 1 (Nuevo)": {
+      "main": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente BIPOLAR": {
+      "main": [
+        [
+          {
+            "node": "Detect Lead Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Lead Complete": {
+      "main": [
+        [
+          {
+            "node": "¿Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Lead?": {
+      "main": [
+        [
+          {
+            "node": "Prep Momento 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Momento 2": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Momento 2 (Calificado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Momento 2 (Calificado)": {
+      "main": [
+        [
+          {
+            "node": "Email a Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email a Ventas": {
+      "main": [
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead": {
+      "main": [
+        [
+          {
+            "node": "Process Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Ya Calificado?": {
+      "main": [
+        [
+          {
+            "node": "Prep Lead Existente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Existe en Sheet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Lead Existente": {
+      "main": [
+        [
+          {
+            "node": "Responder Lead Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Lookup": {
+      "main": [
+        [
+          {
+            "node": "¿Ya Calificado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existe en Sheet?": {
+      "main": [
+        [
+          {
+            "node": "Asistente BIPOLAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prep Momento 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "a47c5ba8-687a-4ce5-b7bb-fcafed750980",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ed753031efe2fb121206b75a4d94ee9275cc0586c9f54300749965ae24fb6b38"
+  },
+  "id": "Y2SJ2fB9APdgxadn",
+  "tags": []
+}
