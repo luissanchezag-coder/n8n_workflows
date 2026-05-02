@@ -14,7 +14,7 @@
       "typeVersion": 1,
       "position": [
         -2912,
-        -176
+        16
       ],
       "webhookId": "f44c7df3-6112-45a7-8986-c438b3849e3d",
       "credentials": {
@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message || message.type !== 'text') return [];\nconst phoneNumber = message.from || '';\nconst senderName = contact?.profile?.name || 'Cliente';\nconst text = message.text?.body || '[Multimedia]';\n\nconst isReset = text.trim().toLowerCase() === '/reset';\nconst isResume = text.trim().toLowerCase() === '/resume';\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\n\nconst TTL_RESET_MS = 30 * 24 * 60 * 60 * 1000;\nconst TTL_HUMAN_MS = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [phone, ts] of Object.entries(wf.resetEpochs)) {\n  if (now - ts > TTL_RESET_MS) delete wf.resetEpochs[phone];\n}\nfor (const [phone, ts] of Object.entries(wf.humanModeAt)) {\n  if (now - ts > TTL_HUMAN_MS) {\n    delete wf.humanMode[phone];\n    delete wf.humanModeAt[phone];\n  }\n}\n\nif (isReset) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isResume) {\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\n\nconst epoch = wf.resetEpochs[phoneNumber] || 0;\nconst sessionId = epoch ? phoneNumber + '-' + epoch : phoneNumber;\nconst chatInput = isReset ? 'Hola' : text;\n\nreturn [{ json: { phoneNumber, senderName, chatInput, sessionId, isReset, isResume } }];"
+        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message || message.type !== 'text') return [];\nconst rawPhone = message.from || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst senderName = contact?.profile?.name || 'Cliente';\nconst text = message.text?.body || '[Multimedia]';\n\nconst isReset = text.trim().toLowerCase() === '/reset';\nconst isResume = text.trim().toLowerCase() === '/resume';\nconst isVolver = text.trim().toLowerCase() === '/volver';\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\n\nconst TTL_RESET_MS = 30 * 24 * 60 * 60 * 1000;\nconst TTL_HUMAN_MS = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [phone, ts] of Object.entries(wf.resetEpochs)) {\n  if (now - ts > TTL_RESET_MS) delete wf.resetEpochs[phone];\n}\nfor (const [phone, ts] of Object.entries(wf.humanModeAt)) {\n  if (now - ts > TTL_HUMAN_MS) {\n    delete wf.humanMode[phone];\n    delete wf.humanModeAt[phone];\n  }\n}\n\nif (isReset) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isResume) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isVolver) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\n\nconst epoch = wf.resetEpochs[phoneNumber] || 0;\nconst sessionId = epoch ? phoneNumber + '-' + epoch : phoneNumber;\nconst chatInput = (isReset || isVolver || isResume) ? 'Hola' : text;\n\nreturn [{ json: { phoneNumber, senderName, chatInput, sessionId, isReset, isResume } }];"
       },
       "id": "ff274425-ffdb-4e22-831c-289384a5290a",
       "name": "Extract Message",
@@ -34,7 +34,7 @@
       "typeVersion": 2,
       "position": [
         -2688,
-        -176
+        16
       ]
     },
     {
@@ -46,8 +46,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1568,
-        -160
+        -1120,
+        -64
       ]
     },
     {
@@ -62,7 +62,7 @@
           "__rl": true,
           "value": 1001783326,
           "mode": "list",
-          "cachedResultName": "BIPOLAR - Pipeline 1: Lead Log",
+          "cachedResultName": "Bipolar - Base de datos",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/edit#gid=1001783326"
         },
         "columns": {
@@ -194,8 +194,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        -1344,
-        -160
+        -896,
+        -64
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -209,7 +209,7 @@
         "promptType": "define",
         "text": "={{ $('Extract Message').item.json.chatInput }}",
         "options": {
-          "systemMessage": "### 1. IDENTIDAD Y ROL\nEres el Asistente Virtual de BIPOLAR (https://bipolar.mx/es/), una agencia creativa de servicio completo que mezcla razón y emoción.\n- Lema obligatorio en saludos: \"Es normal ser bipolar\".\n- Tono: Profesional, creativo, cercano y audaz. Usa emojis con moderación (🚀, ✨, 💡).\n\n### 2. PROTOCOLO DE SALUDO (MANDATORIO)\nAnte cualquier saludo o primer contacto, DEBES responder con este formato de menú:\n\"¡Hola! 👋 (Agrega una frase inspirada en bipolar.mx conectada con Es normal ser bipolar). Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy?\n\n1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias).\n2️⃣ Ver casos de éxito (Uber, Tim Hortons, Molotov).\n3️⃣ Ser contactado por el equipo de ventas.\"\n4️⃣ Hablar con un humano.\n\n### 3. REGLAS DE CONTROL Y SEGURIDAD\n- Si preguntan quien es Cesar -> Contestar: César es el lider de los antis, filántropo y pensador. Ganador indiscutible del puercoton, rival político del diputado y fundador de bipolar.\n- CONCISIÓN: Respuestas de 2 a 4 oraciones (excepto en el Menú o Cierre de Lead).\n- REGLA DE DOMINIO: Solo respondes sobre BIPOLAR.\n- SISTEMA DE STRIKES: Si el usuario pregunta algo ajeno (clima, política, etc.), advierte que solo hablas de la agencia. Si lo hace por 3ra vez, finaliza la charla: \"Agradezco tu interés, pero por ahora solo atiendo consultas de la agencia. ¡Quedamos a la orden!\"\n- RECUPERACIÓN: Si ves mensajes cortados o errores técnicos en el historial, ignóralos y retoma la charla con naturalidad.\n\n### 4. CALIFICACIÓN DE LEADS (UN DATO POR TURNO)\nCuando el usuario quiera cotizar o hablar con ventas, calificalo pidiendo UN dato a la vez en este orden ESTRICTO:\n\n1. **NOMBRE** → Pregunta: \"¿Me compartes tu nombre completo para registrarte?\"\n   - ⚠️ VALIDACIÓN NOMBRE: Si la respuesta contiene '@', tiene más de 4 dígitos seguidos, o es claramente un piropo/saludo (\"guapa\", \"linda\", \"hola\", \"qué tal\", \"hermosa\", etc.) → NO aceptarlo. Responde: \"Necesito tu nombre real para registrarte 🙂 ¿Me compartes tu nombre completo?\" y vuelve a esperar.\n\n2. **EMAIL** → Pregunta: \"Gracias, {nombre}. ¿Cuál es tu email?\"\n   - ⚠️ VALIDACIÓN EMAIL: Si la respuesta NO contiene '@' seguido de un dominio con punto (ej. nombre@dominio.com), O si el dominio tiene puntos consecutivos (ej. gmail..com, gmail...com), O si no tiene TLD al final → NO aceptarla. Responde: \"Ese no parece un email válido. Por favor compárteme tu correo electrónico (ej: nombre@dominio.com) 📧\" y vuelve a esperar.\n\n3. **PROYECTO** → Pregunta: \"Perfecto, {nombre}. Cuéntanos brevemente: ¿qué tienes en mente? (proyecto, idea, reto que quieres resolver con BIPOLAR)\"\n   - Acepta cualquier respuesta con al menos 3 caracteres. Si el usuario dice 'no sé' o algo muy vago, continúa igual.\n\n4. **TELÉFONO** → Pregunta: \"Genial. Para que el equipo te contacte, ¿me compartes tu teléfono?\"\n   - ⚠️ VALIDACIÓN TELÉFONO: Si la respuesta tiene menos de 7 dígitos → NO aceptarla. Responde: \"Necesito un número de teléfono válido (al menos 7 dígitos) 📱\" y vuelve a esperar.\n\n5. **PRESUPUESTO** → Pregunta: \"Última pregunta: ¿cuentas con un presupuesto aproximado para tu proyecto? (puedes decir 'no sé' si aún no lo defines) 💰\"\n   - Acepta CUALQUIER respuesta del usuario, incluyendo 'no sé', 'no tengo', números, rangos, etc. NO re-preguntes el presupuesto.\n\n*Nota: Revisa el historial; si el usuario ya mencionó alguno de estos datos de forma natural, no lo vuelvas a pedir y pasa al siguiente.*\n\n### 5. CIERRE TÉCNICO DE LEAD (OBLIGATORIO)\n⚠️ REGLA CRÍTICA: NUNCA emitas [LEAD_COMPLETE] sin haber preguntado explícitamente el PRESUPUESTO en un turno separado y haber recibido respuesta, aunque el usuario haya dado todos los demás datos de un golpe.\n\nAl confirmar los 5 datos (nombre, email, proyecto, teléfono, presupuesto), responde con este cierre y el bloque de datos final:\n\"¡Excelente! Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. 🚀 Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨\"\n\n[LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"telefono\":\"...\",\"proyecto\":\"...\",\"presupuesto\":\"...\"}[/LEAD_COMPLETE]\n\n### 6. CONOCIMIENTO (CASOS DE ÉXITO)\n- Uber - Juntos en el viaje: https://bipolar.mx/es/uber/\n- Tim Hortons México: https://bipolar.mx/es/tim/\n- Sabor Molotov: https://bipolar.mx/es/molotov/\n- Humind (Estoy Aquí): https://bipolar.mx/es/estoy-aqui/\n\n### 7. TRANSFERENCIA A AGENTE HUMANO (MANDATORIO)\n\nSi el usuario en cualquier momento indica que desea hablar con un humano, un agente, o un representante real, DEBES:\n1. Responder con un mensaje de transición amigable (1-2 oraciones máximo, NO preguntes nada más).\n2. Incluir el tag exacto `[HUMAN_HANDOFF]` al final del mensaje de texto, en una línea propia.\n\nFrases que ACTIVAN [HUMAN_HANDOFF] (sin importar cómo estén escritas):\n- \"quiero hablar con un humano\"\n- \"quiero hablar con una persona\"\n- \"quiero un agente\"\n- \"agente humano\"\n- \"hablar con alguien\"\n- \"con una persona real\"\n- \"representante\"\n- \"opción 4\" / \"4\" cuando el menú principal está activo / \"4️⃣\"\n- cualquier variante de las anteriores\n\nFormato OBLIGATORIO de respuesta cuando se activa handoff:\n¡Claro! Te voy a conectar con un agente de BIPOLAR ahora mismo. Un momento por favor 🧑‍💼\n[HUMAN_HANDOFF]\n\nREGLA CRÍTICA: El tag `[HUMAN_HANDOFF]` NUNCA debe aparecer sin el mensaje de transición. Siempre escribe primero el texto, luego el tag en línea separada."
+          "systemMessage": "### 1. IDENTIDAD Y ROL\nEres el Asistente Virtual de BIPOLAR (https://bipolar.mx/es/), una agencia creativa de servicio completo que mezcla razón y emoción.\n- Lema obligatorio en saludos: \"Es normal ser bipolar\".\n- Tono: Profesional, creativo, cercano y audaz. Usa emojis con moderación (🚀, ✨, 💡).\n\n### 2. PROTOCOLO DE SALUDO (MANDATORIO)\n⚠️ EXCEPCIÓN CRÍTICA: Si el chatInput comienza con \"[CONTEXTO INTERNO:\" y contiene \"YA ESTÁ REGISTRADO\", NO uses el menú. Saluda al cliente por su nombre, recuérdale que ya está registrado y que el equipo se pondrá en contacto pronto, y responde su mensaje de forma directa. NO repitas el menú de 5 opciones.\n\nAnte cualquier saludo o primer contacto (sin \"[CONTEXTO INTERNO:\"), DEBES responder con este formato de menú:\n\"¡Hola! 👋 (Agrega una frase inspirada en bipolar.mx conectada con Es normal ser bipolar). Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy?\n\n1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias).\n2️⃣ Conocer casos de éxito (Uber, Tim Hortons, Molotov).\n3️⃣ Ser contactado por el equipo de ventas.\"\n4️⃣ Hablar con alguien de Bipolar.\n5️⃣ Ver showreel.\n\n### 3. REGLAS DE CONTROL Y SEGURIDAD\n- `/reset` (solo pruebas): reinicia la conversación del usuario. Se eliminará en producción definitiva. Si un cliente lo escribe, ignóralo con naturalidad sin mencionarlo.\n- Si preguntan quien es Cesar -> Contestar: César es el lider de los antis, filántropo y pensador. Ganador indiscutible del puercoton, rival político del diputado y fundador de bipolar.\n- CONCISIÓN: Respuestas de 2 a 4 oraciones (excepto en el Menú o Cierre de Lead).\n- REGLA DE DOMINIO: Solo respondes sobre BIPOLAR.\n- SISTEMA DE STRIKES: Si el usuario pregunta algo ajeno (clima, política, etc.), advierte que solo hablas de la agencia. Si lo hace por 3ra vez, finaliza la charla: \"Agradezco tu interés, pero por ahora solo atiendo consultas de la agencia. ¡Quedamos a la orden!\"\n- RECUPERACIÓN: Si ves mensajes cortados o errores técnicos en el historial, ignóralos y retoma la charla con naturalidad.\n\n### 4. CALIFICACIÓN DE LEADS (UN DATO POR TURNO)\nCuando el usuario quiera cotizar o hablar con ventas, calificalo pidiendo UN dato a la vez en este orden ESTRICTO:\n\n1. **NOMBRE** → Pregunta: \"¿Me compartes tu nombre completo para registrarte?\"\n   - ⚠️ VALIDACIÓN NOMBRE: Si la respuesta contiene '@', tiene más de 4 dígitos seguidos, o es claramente un piropo/saludo (\"guapa\", \"linda\", \"hola\", \"qué tal\", \"hermosa\", etc.) → NO aceptarlo. Responde: \"Necesito tu nombre real para registrarte 🙂 ¿Me compartes tu nombre completo?\" y vuelve a esperar.\n\n2. **EMAIL** → Pregunta: \"Gracias, {nombre}. ¿Cuál es tu email?\"\n   - ⚠️ VALIDACIÓN EMAIL: Si la respuesta NO contiene '@' seguido de un dominio con punto (ej. nombre@dominio.com), O si el dominio tiene puntos consecutivos (ej. gmail..com, gmail...com), O si no tiene TLD al final → NO aceptarla. Responde: \"Ese no parece un email válido. Por favor compárteme tu correo electrónico (ej: nombre@dominio.com) 📧\" y vuelve a esperar.\n\n3. **PROYECTO** → Pregunta: \"Perfecto, {nombre}. Cuéntanos brevemente: ¿qué tienes en mente? (proyecto, idea, reto que quieres resolver con BIPOLAR)\"\n   - Acepta cualquier respuesta con al menos 3 caracteres. Si el usuario dice 'no sé' o algo muy vago, continúa igual.\n\n4. **TELÉFONO** → Pregunta: \"Genial. Para que el equipo te contacte, ¿me compartes tu teléfono?\"\n   - ⚠️ VALIDACIÓN TELÉFONO: Si la respuesta tiene menos de 7 dígitos → NO aceptarla. Responde: \"Necesito un número de teléfono válido (al menos 7 dígitos) 📱\" y vuelve a esperar.\n\n5. **PRESUPUESTO** → Pregunta: \"Última pregunta: ¿cuentas con un presupuesto aproximado para tu proyecto? (puedes decir 'no sé' si aún no lo defines) 💰\"\n   - Acepta CUALQUIER respuesta del usuario, incluyendo 'no sé', 'no tengo', números, rangos, etc. NO re-preguntes el presupuesto.\n\n*Nota: Revisa el historial; si el usuario ya mencionó alguno de estos datos de forma natural, no lo vuelvas a pedir y pasa al siguiente.*\n\n### 5. CIERRE TÉCNICO DE LEAD (OBLIGATORIO)\n⚠️ REGLA CRÍTICA: NUNCA emitas [LEAD_COMPLETE] sin haber preguntado explícitamente el PRESUPUESTO en un turno separado y haber recibido respuesta, aunque el usuario haya dado todos los demás datos de un golpe.\n\nAl confirmar los 5 datos (nombre, email, proyecto, teléfono, presupuesto), responde con este cierre y el bloque de datos final:\n\"¡Excelente! Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. 🚀 Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨\"\n\n[LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"telefono\":\"...\",\"proyecto\":\"...\",\"presupuesto\":\"...\"}[/LEAD_COMPLETE]\n\n### 6. CONOCIMIENTO (CASOS DE ÉXITO)\n- Uber - Juntos en el viaje: https://bipolar.mx/es/uber/\n- Tim Hortons México: https://bipolar.mx/es/tim/\n- Sabor Molotov: https://bipolar.mx/es/molotov/\n- Humind (Estoy Aquí): https://bipolar.mx/es/estoy-aqui/\n\n### 7. TRANSFERENCIA A AGENTE HUMANO (MANDATORIO)\n\nSi el usuario en cualquier momento indica que desea hablar con un humano, un agente, o un representante real, DEBES:\n1. Responder con un mensaje de transición amigable (1-2 oraciones máximo, NO preguntes nada más).\n2. Incluir el tag exacto `[HUMAN_HANDOFF]` al final del mensaje de texto, en una línea propia.\n\nFrases que ACTIVAN [HUMAN_HANDOFF] (sin importar cómo estén escritas):\n- \"quiero hablar con un humano\"\n- \"quiero hablar con una persona\"\n- \"quiero un agente\"\n- \"agente humano\"\n- \"hablar con alguien\"\n- \"con una persona real\"\n- \"representante\"\n- \"opción 4\" / \"4\" cuando el menú principal está activo / \"4️⃣\"\n- cualquier variante de las anteriores\n\nFormato OBLIGATORIO de respuesta cuando se activa handoff:\n¡Claro! Te voy a conectar con un agente de BIPOLAR ahora mismo. Un momento por favor 🧑‍💼\n[HUMAN_HANDOFF]\n\nREGLA CRÍTICA: El tag `[HUMAN_HANDOFF]` NUNCA debe aparecer sin el mensaje de transición. Siempre escribe primero el texto, luego el tag en línea separada.\n\n### 8. SHOWREEL — QUIÉNES SOMOS (OPCIÓN 5)\n\nCuando el cliente elija la opción 5, diga \"quiénes son\", \"ver showreel\", \"qué hacen\", \"ver su trabajo\" o cualquier variante de conocer la agencia:\n\n1. Incluye el tag exacto `[SHOWREEL]` en una línea propia AL INICIO de tu respuesta.\n2. Después del tag, escribe un mensaje breve de transición (máximo 1 oración) más una pregunta abierta para iniciar calificación.\n\nFormato OBLIGATORIO:\n[SHOWREEL]\n¡Aquí te compartimos un vistazo de lo que somos! 🎬 Cuéntame, ¿en qué proyecto estás trabajando o qué reto tienes en mente para BIPOLAR?\n\nREGLAS DEL SHOWREEL:\n- El tag `[SHOWREEL]` se emite UNA SOLA VEZ por conversación. Si el cliente vuelve a pedir el video, responde con texto solamente (sin el tag).\n- NO combinar `[SHOWREEL]` con `[HUMAN_HANDOFF]` ni `[LEAD_COMPLETE]` en el mismo mensaje.\n- Frases que ACTIVAN `[SHOWREEL]`: \"opción 5\" / \"5\" cuando el menú está activo / \"5️⃣\" / \"quiénes son\" / \"ver showreel\" / \"qué hacen\" / variantes similares.\n- NUNCA emitas `[SHOWREEL]` si el usuario menciona \"5\" como número de presupuesto, años, cantidades u otro contexto que no sea el menú.\n- Si tras el `[SHOWREEL]` el usuario responde de forma vaga, off-topic o sin mencionar un proyecto (ej. \"no sé\", \"mucha burocracia\", \"x\", etc.), NO repitas la misma pregunta. Vuelve al menú: \"Sin problema 😊 ¿Qué te gustaría explorar? 1️⃣ Servicios, 2️⃣ Casos de éxito, 3️⃣ Ventas, 4️⃣ Hablar con alguien.\""
         }
       },
       "id": "ccb58402-4d52-4630-b006-5c6a36ac1d4f",
@@ -217,8 +217,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -1120,
-        -80
+        -672,
+        -64
       ]
     },
     {
@@ -233,8 +233,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -1120,
-        144
+        -672,
+        160
       ],
       "credentials": {
         "googlePalmApi": {
@@ -254,21 +254,21 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -992,
-        144
+        -544,
+        160
       ]
     },
     {
       "parameters": {
-        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst HANDOFF_TAG = '[HUMAN_HANDOFF]';\nlet humanHandoff = false;\nif (agentOutput.includes(HANDOFF_TAG)) {\n  humanHandoff = true;\n  cleanMessage = agentOutput.replace(HANDOFF_TAG, '').trim();\n}\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,24}$/;\nconst emailOK = (e) => typeof e === 'string' && EMAIL_RE.test(e.trim()) && !e.includes('..');\nconst PRESUPUESTO_FALSO = /^(no\\s*(especificado|proporcionado|definido|disponible|tengo|aplica)|n\\/a|na|ninguno|sin\\s*presupuesto|desconocido|por\\s*definir|a\\s*definir|pendiente|\\.\\.\\.)$/i;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2 && !PRESUPUESTO_FALSO.test(p.trim());\nconst proyectoOK = (p) => p && p.trim().length >= 3 && !p.includes('...');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\nconst partial = wf.partialLeads[phoneNumber];\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && emailOK(fromUser.email) && !partial.email) partial.email = fromUser.email;\nif (fromUser.telefono && !partial.telefono) {\n  const cleanPhone = fromUser.telefono.replace(/\\D/g, '');\n  if (cleanPhone.length >= 7) partial.telefono = cleanPhone;\n}\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst userText = (userMsg || '').trim();\nconst explicitNamePatterns = [/^(?:soy|me llamo|mi nombre es|me dicen)\\s+([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\\s]{1,40})/i];\nlet explicitName = null;\nfor (const re of explicitNamePatterns) {\n  const m = userText.match(re);\n  if (m && m[1]) { explicitName = m[1].trim().split(/\\s+/).slice(0, 3).join(' '); break; }\n}\nconst botAskedName = lastBotMsg.includes('nombre completo') ||\n  (lastBotMsg.includes('nombre') && !lastBotMsg.includes('tel') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userHasEmail = /@/.test(userText);\nconst userHasPhone = /\\d[\\d\\s\\-()]{5,}\\d/.test(userText);\nconst userIsMenuChoice = /^[1-3]\\b/.test(userText);\nconst userHasManyDigits = (userText.match(/\\d/g) || []).length > 4;\nconst PIROPOS = /^(hola|buenas|buenos dias|buenos días|no lo se|no lo sé|no se|no sé|no tengo|si|sí|no|guapa|linda|hermosa|bonita|genial|perfecto|gracias)$/i;\nconst looksLikeRealName = userText.length >= 2 && !userHasEmail && !userHasPhone && !userIsMenuChoice && !userHasManyDigits && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !PIROPOS.test(userText);\nif (explicitName && !partial.nombre) {\n  partial.nombre = explicitName.replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n} else if (botAskedName && looksLikeRealName && !partial.nombre) {\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n}\nconst lastWasProjectAsk = lastBotMsg.includes('tienes en mente') || lastBotMsg.includes('cuéntanos') || lastBotMsg.includes('cuentanos');\nif (lastWasProjectAsk && userText.length >= 3 && !partial.proyecto) {\n  partial.proyecto = userText.slice(0, 200);\n}\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try { agentParsed = JSON.parse(agentOutput.slice(start, end).trim()); } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre) && !/@/.test(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && emailOK(agentParsed.email)) partial.email = agentParsed.email.trim();\n  if (agentParsed.telefono && !isInvalid(agentParsed.telefono)) partial.telefono = agentParsed.telefono.trim();\n  if (agentParsed.proyecto && proyectoOK(agentParsed.proyecto)) partial.proyecto = agentParsed.proyecto.trim().slice(0, 200);\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\nconst tieneBase = partial.nombre && partial.email && partial.telefono;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst noSeRegex = /^(no(\\s+lo)?\\s*(se|sé)|no\\s+tengo(\\s+idea)?|na|n\\/a|no\\s+proporcionado|depende|m[áa]s\\s+adelante|todav[íi]a\\s+no|aun\\s+no|a[úu]n\\s+no|luego(\\s+te\\s+digo)?|despu[ée]s|ninguno|sin\\s+presupuesto)\\b.*$/i;\nconst isNoSeAnswer = noSeRegex.test(userLower) || userLower === 'no' || userLower === 'si' || userLower === 'sí';\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\nconst cierreTexto = (nom) => '¡Excelente, ' + (nom || 'gracias') + '! 🚀 Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨';\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto) && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n  if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n} else if (agentParsed && tieneBase && (!presupuestoOK(agentParsed.presupuesto) || !lastWasBudgetAsk)) {\n  if (lastWasBudgetAsk) {\n    leadComplete = true;\n    leadData = { ...partial, presupuesto: 'No proporcionado' };\n    if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n  } else {\n    partial.leadCompleteEmitted = false;\n    cleanMessage = '¡Perfecto, ya tenemos tu nombre, email y teléfono! Solo una pregunta más: ¿cuentas con un presupuesto aproximado para tu proyecto? (Puedes decir \"no sé\" si aún no lo defines) 💰';\n  }\n} else if (tieneBase && lastWasBudgetAsk) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n} else if (partial.leadCompleteEmitted && tieneBase && userLower.length > 0) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n}\nif (leadData && !leadData.proyecto) leadData.proyecto = partial.proyecto || '';\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\nif (leadComplete) delete wf.partialLeads[phoneNumber];\nconst soloUser = wf.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = fechaCorta.replace(/\\s+/g, '-');\nconst procLookup = $('Process Lookup').item.json;\nconst estadoActual = procLookup?.Estado || '';\nconst yaCalificado = estadoActual === 'Calificado';\nconst upsertParcial = leadComplete ? null : {\n  'ID (Phone Number)': phoneNumber,\n  'Estado': yaCalificado ? 'Calificado' : 'Nuevo',\n  'Ultima Interaccion': fechaCorta,\n  'Transcripcion Corta': transcripcion,\n  ...(partial.nombre      && { 'Nombre': partial.nombre }),\n  ...(partial.email       && { 'Email': partial.email }),\n  ...(partial.telefono    && { 'Telefono': partial.telefono }),\n  ...(partial.proyecto    && { 'Proyecto': partial.proyecto }),\n  ...(partial.presupuesto && { 'Presupuesto': partial.presupuesto }),\n};\nreturn [{ json: { phoneNumber, cleanMessage, leadComplete, leadData, transcripcion, fechaCorta, fechaTimestamp, upsertParcial, humanHandoff, senderName: $('Extract Message').item.json.senderName } }];\n"
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst HANDOFF_TAG = '[HUMAN_HANDOFF]';\nlet humanHandoff = false;\nif (agentOutput.includes(HANDOFF_TAG)) {\n  humanHandoff = true;\n  cleanMessage = agentOutput.replace(HANDOFF_TAG, '').trim();\n}\nconst SHOWREEL_TAG = '[SHOWREEL]';\nlet sendShowreel = false;\nif (agentOutput.includes(SHOWREEL_TAG)) {\n  sendShowreel = true;\n  cleanMessage = cleanMessage.replace(SHOWREEL_TAG, '').trim();\n  if (cleanMessage.length < 10) {\n    cleanMessage = '¡Aquí te compartimos un vistazo de lo que somos! 🎬 Cuéntame, ¿en qué proyecto estás trabajando o qué reto tienes en mente para BIPOLAR?';\n  }\n}\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,24}$/;\nconst emailOK = (e) => typeof e === 'string' && EMAIL_RE.test(e.trim()) && !e.includes('..');\nconst PRESUPUESTO_FALSO = /^(no\\s*(especificado|proporcionado|definido|disponible|tengo|aplica)|n\\/a|na|ninguno|sin\\s*presupuesto|desconocido|por\\s*definir|a\\s*definir|pendiente|\\.\\.\\.)$/i;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2 && !PRESUPUESTO_FALSO.test(p.trim());\nconst proyectoOK = (p) => p && p.trim().length >= 3 && !p.includes('...');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\nconst partial = wf.partialLeads[phoneNumber];\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && emailOK(fromUser.email) && !partial.email) partial.email = fromUser.email;\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst userText = (userMsg || '').trim();\nconst explicitNamePatterns = [/^(?:soy|me llamo|mi nombre es|me dicen)\\s+([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\\s]{1,40})/i];\nlet explicitName = null;\nfor (const re of explicitNamePatterns) {\n  const m = userText.match(re);\n  if (m && m[1]) { explicitName = m[1].trim().split(/\\s+/).slice(0, 3).join(' '); break; }\n}\nconst botAskedName = lastBotMsg.includes('nombre completo') ||\n  (lastBotMsg.includes('nombre') && !lastBotMsg.includes('tel') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userHasEmail = /@/.test(userText);\nconst userHasPhone = /\\d[\\d\\s\\-()]{5,}\\d/.test(userText);\nconst userIsMenuChoice = /^[1-3]\\b/.test(userText);\nconst userHasManyDigits = (userText.match(/\\d/g) || []).length > 4;\nconst PIROPOS = /^(hola|buenas|buenos dias|buenos días|no lo se|no lo sé|no se|no sé|no tengo|si|sí|no|guapa|linda|hermosa|bonita|genial|perfecto|gracias)$/i;\nconst looksLikeRealName = userText.length >= 2 && !userHasEmail && !userHasPhone && !userIsMenuChoice && !userHasManyDigits && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !PIROPOS.test(userText);\nif (explicitName && !partial.nombre) {\n  partial.nombre = explicitName.replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n} else if (botAskedName && looksLikeRealName && !partial.nombre) {\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n}\nconst lastWasProjectAsk = lastBotMsg.includes('tienes en mente') || lastBotMsg.includes('cuéntanos') || lastBotMsg.includes('cuentanos');\nif (lastWasProjectAsk && userText.length >= 3 && !partial.proyecto) {\n  partial.proyecto = userText.slice(0, 200);\n}\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try { agentParsed = JSON.parse(agentOutput.slice(start, end).trim()); } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre) && !/@/.test(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && emailOK(agentParsed.email)) partial.email = agentParsed.email.trim();\n  if (agentParsed.proyecto && proyectoOK(agentParsed.proyecto)) partial.proyecto = agentParsed.proyecto.trim().slice(0, 200);\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\nconst tieneBase = partial.nombre && partial.email;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst noSeRegex = /^(no(\\s+lo)?\\s*(se|sé)|no\\s+tengo(\\s+idea)?|na|n\\/a|no\\s+proporcionado|depende|m[áa]s\\s+adelante|todav[íi]a\\s+no|aun\\s+no|a[úu]n\\s+no|luego(\\s+te\\s+digo)?|despu[ée]s|ninguno|sin\\s+presupuesto)\\b.*$/i;\nconst isNoSeAnswer = noSeRegex.test(userLower) || userLower === 'no' || userLower === 'si' || userLower === 'sí';\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\nconst cierreTexto = (nom) => '¡Excelente, ' + (nom || 'gracias') + '! 🚀 Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨';\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto) && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n  if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n} else if (agentParsed && tieneBase && (!presupuestoOK(agentParsed.presupuesto) || !lastWasBudgetAsk)) {\n  if (lastWasBudgetAsk) {\n    leadComplete = true;\n    leadData = { ...partial, presupuesto: 'No proporcionado' };\n    if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n  } else {\n    partial.leadCompleteEmitted = false;\n    cleanMessage = '¡Perfecto, ya tenemos tu nombre y email! Solo una pregunta más: ¿cuentas con un presupuesto aproximado para tu proyecto? (Puedes decir \"no sé\" si aún no lo defines) 💰';\n  }\n} else if (tieneBase && lastWasBudgetAsk) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n} else if (partial.leadCompleteEmitted && tieneBase && userLower.length > 0) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n}\nif (leadData && !leadData.proyecto) leadData.proyecto = partial.proyecto || '';\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\nif (leadComplete) delete wf.partialLeads[phoneNumber];\nconst soloUser = wf.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = fechaCorta.replace(/\\s+/g, '-');\nconst procLookup = $('Process Lookup').item.json;\nconst estadoActual = procLookup?.Estado || '';\nconst yaCalificado = estadoActual === 'Calificado';\nif (yaCalificado) { leadComplete = false; leadData = null; }\nconst upsertParcial = (leadComplete || yaCalificado) ? null : {\n  'ID (Phone Number)': phoneNumber,\n  'Estado': yaCalificado ? 'Calificado' : 'Nuevo',\n  'Ultima Interaccion': fechaCorta,\n  'Transcripcion Corta': transcripcion,\n  ...(partial.nombre      && { 'Nombre': partial.nombre }),\n  ...(partial.email       && { 'Email': partial.email }),\n  ...(partial.proyecto    && { 'Proyecto': partial.proyecto }),\n  ...(partial.presupuesto && { 'Presupuesto': partial.presupuesto }),\n};\nreturn [{ json: { phoneNumber, cleanMessage, leadComplete, leadData, transcripcion, fechaCorta, fechaTimestamp, upsertParcial, humanHandoff, sendShowreel, senderName: $('Extract Message').item.json.senderName } }];\n"
       },
       "id": "c952c271-5b4c-4378-9e82-907758ded443",
       "name": "Detect Lead Complete",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -768,
-        -80
+        -320,
+        -64
       ]
     },
     {
@@ -300,20 +300,20 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -544,
-        -80
+        800,
+        -96
       ]
     },
     {
       "parameters": {
-        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'ID (Phone Number)': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Telefono': leadData.telefono,\n      'Proyecto': leadData.proyecto || '',\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Ultima Interaccion': fechaCorta,\n      'Transcripcion Corta': transcripcion,\n      'Timestamp': fechaTimestamp || fechaCorta.replace(/\\s+/g, '-')\n    }\n  }\n}];\n"
+        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'ID (Phone Number)': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Proyecto': leadData.proyecto || '',\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Ultima Interaccion': fechaCorta,\n      'Transcripcion Corta': transcripcion,\n      'Timestamp': fechaTimestamp || fechaCorta.replace(/\\s+/g, '-')\n    }\n  }\n}];\n"
       },
       "id": "70c2fd5b-377a-4095-a860-1072bfe08b90",
       "name": "Cliente Interesado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -320,
+        1024,
         -160
       ]
     },
@@ -329,7 +329,7 @@
           "__rl": true,
           "value": 1001783326,
           "mode": "list",
-          "cachedResultName": "BIPOLAR - Pipeline 1: Lead Log",
+          "cachedResultName": "Bipolar - Base de datos",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/edit#gid=1001783326"
         },
         "columns": {
@@ -461,7 +461,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        -96,
+        1248,
         -160
       ],
       "credentials": {
@@ -474,8 +474,8 @@
     {
       "parameters": {
         "sendTo": "luis.sanchezag@gmail.com",
-        "subject": "=?? Lead BIPOLAR - {{ $json.upsertCalificado['Nombre'] }}",
-        "message": "=<h2>Nuevo Prospecto Calificado</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $json.upsertCalificado['Nombre'] }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $json.upsertCalificado['Email'] }}</td></tr>\n<tr><td><b>Teléfono</b></td><td>{{ $json.upsertCalificado['Telefono'] }}</td></tr>\n<tr><td><b>Proyecto</b></td><td>{{ $json.upsertCalificado['Proyecto'] || 'No especificado' }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $json.upsertCalificado['Presupuesto'] || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $json.upsertCalificado['Transcripcion Corta'] }}</td></tr>\n</table>",
+        "subject": "=?? Lead BIPOLAR - {{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}",
+        "message": "=<h2>Nuevo Prospecto Calificado</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Email }}</td></tr>\n<tr><td><b>WhatsApp</b></td><td>{{ $('Extract Message').item.json.phoneNumber }}</td></tr>\n<tr><td><b>Proyecto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Proyecto || 'No especificado' }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Presupuesto || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado['Transcripcion Corta'] }}</td></tr>\n</table>",
         "options": {
           "appendAttribution": false
         }
@@ -485,7 +485,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        128,
+        1472,
         -160
       ],
       "webhookId": "c0b3b97a-c9d2-49f1-a0c1-1fe720b07925",
@@ -509,8 +509,8 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        288,
-        48
+        1696,
+        -96
       ],
       "webhookId": "e56488f3-ed09-4886-9a77-27ae40514379",
       "credentials": {
@@ -532,8 +532,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2464,
-        -176
+        -2016,
+        -96
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -582,21 +582,21 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -2016,
-        -176
+        -1568,
+        -96
       ]
     },
     {
       "parameters": {
-        "jsCode": "const lead = $input.first().json;\nconst phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMessage = $('Extract Message').item.json.chatInput;\nconst sessionId = $('Extract Message').item.json.sessionId;\nconst nombre = lead.Nombre || 'cliente';\n\nconst chatInput = `[CONTEXTO INTERNO: Este cliente (${nombre}) YA ESTÁ REGISTRADO como Calificado. NO le pidas nombre, email, teléfono ni datos. Salúdalo por su nombre, recuérdale que ya lo tienes registrado y que el equipo de ventas se pondrá en contacto. Responde sus preguntas/dudas. Si insiste en registrarse de nuevo, sugiérele escribir /reset.]\\n\\nMensaje del cliente: ${userMessage}`;\n\nreturn [{ json: { phoneNumber, chatInput, sessionId, isCalificado: true } }];"
+        "jsCode": "const lead = $input.first().json;\nconst phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMessage = $('Extract Message').item.json.chatInput;\nconst sessionId = $('Extract Message').item.json.sessionId;\nconst nombre = lead.Nombre || 'cliente';\n\nconst chatInput = `[CONTEXTO INTERNO: Este cliente (${nombre}) YA ESTÁ REGISTRADO como Calificado. NO le pidas nombre, email ni datos. Salúdalo por su nombre, recuérdale que ya lo tienes registrado y que el equipo de ventas se pondrá en contacto. Responde sus preguntas/dudas. Si el cliente pide hablar con ventas o cotizar, NO inicies calificación — simplemente confirma que el equipo lo contactará. Si insiste en registrarse de nuevo, sugiérele escribir /reset.]\\n\\nMensaje del cliente: ${userMessage}`;\n\nreturn [{ json: { phoneNumber, chatInput, sessionId, isCalificado: true } }];"
       },
       "id": "25b08a39-b58f-4b29-a17c-e3cc53e5ffcc",
       "name": "Cliente Ya Existente",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1792,
-        -352
+        -896,
+        -256
       ]
     },
     {
@@ -608,8 +608,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2240,
-        -176
+        -1792,
+        -96
       ]
     },
     {
@@ -641,8 +641,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1792,
-        -80
+        -1344,
+        16
       ]
     },
     {
@@ -674,8 +674,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -656,
-        -80
+        352,
+        -96
       ]
     },
     {
@@ -690,7 +690,7 @@
           "__rl": true,
           "value": 1001783326,
           "mode": "list",
-          "cachedResultName": "BIPOLAR - Pipeline 1: Lead Log",
+          "cachedResultName": "Bipolar - Base de datos",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/edit#gid=1001783326"
         },
         "columns": {
@@ -811,8 +811,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        -656,
-        80
+        576,
+        -16
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -831,8 +831,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2576,
-        80
+        -2464,
+        16
       ]
     },
     {
@@ -864,8 +864,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -2352,
-        80
+        -2240,
+        16
       ]
     },
     {
@@ -873,7 +873,7 @@
         "operation": "send",
         "phoneNumberId": "1103955202801675",
         "recipientPhoneNumber": "={{ $json.phoneNumber }}",
-        "textBody": "⏳ Tu conversación está siendo atendida por un agente de BIPOLAR. Te responderemos muy pronto. Si fue un error, escribe /reset para volver al bot.",
+        "textBody": "⏳ Tu conversación está siendo atendida por un agente de BIPOLAR. Te responderemos muy pronto. Si fue un error, escribe /volver para regresar al bot.",
         "additionalFields": {}
       },
       "id": "9a35d7e2-8d1e-47b1-863f-93b5e5f0a67d",
@@ -881,10 +881,10 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        -2128,
-        240
+        -2016,
+        112
       ],
-      "webhookId": "c5ac5a96-c68e-4cae-b7b0-28e1c61b7cb8",
+      "webhookId": "146e8dae-2866-4d78-a378-9bb9613ed72c",
       "credentials": {
         "whatsAppApi": {
           "id": "31KQwk1oC1jrRM1z",
@@ -921,8 +921,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -544,
-        -320
+        128,
+        -192
       ]
     },
     {
@@ -934,8 +934,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -320,
-        -320
+        352,
+        -352
       ]
     },
     {
@@ -954,8 +954,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -96,
-        -320
+        576,
+        -352
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -981,8 +981,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        128,
-        -320
+        1024,
+        -352
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -1008,8 +1008,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        352,
-        -320
+        1248,
+        -352
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -1032,10 +1032,10 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        576,
-        -320
+        1472,
+        -352
       ],
-      "webhookId": "1a421626-1a93-4112-b806-1ede0dbb11b2",
+      "webhookId": "67fc1a6e-e87d-4b03-a391-657f3d3c064c",
       "credentials": {
         "whatsAppApi": {
           "id": "31KQwk1oC1jrRM1z",
@@ -1055,8 +1055,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        16,
-        -320
+        800,
+        -352
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -1079,13 +1079,13 @@
       "typeVersion": 2,
       "position": [
         -2912,
-        240
+        336
       ],
       "webhookId": "c92bcfbb-d9bb-499a-b12c-d32b23d7d69d"
     },
     {
       "parameters": {
-        "jsCode": "const { phoneNumber } = $input.first().json;\nconst wf = $getWorkflowStaticData('global');\nif (wf.humanMode && phoneNumber) {\n  delete wf.humanMode[phoneNumber];\n}\nif (wf.humanModeAt && phoneNumber) {\n  delete wf.humanModeAt[phoneNumber];\n}\nreturn [{ json: { ok: true, phoneNumber } }];"
+        "jsCode": "const rawPhone = $input.first().json.phoneNumber || $input.first().json.body?.phoneNumber || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (phoneNumber) {\n  wf.resetEpochs[phoneNumber] = Date.now();\n  if (wf.humanMode) delete wf.humanMode[phoneNumber];\n  if (wf.humanModeAt) delete wf.humanModeAt[phoneNumber];\n}\nreturn [{ json: { ok: true, phoneNumber } }];"
       },
       "id": "resume-code-001",
       "name": "Limpiar humanMode",
@@ -1093,7 +1093,7 @@
       "typeVersion": 2,
       "position": [
         -2688,
-        240
+        336
       ]
     },
     {
@@ -1110,8 +1110,90 @@
       "typeVersion": 1,
       "position": [
         -2464,
-        240
+        336
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "showreel-check",
+              "leftValue": "={{ $json.sendShowreel }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "showreel-if-001",
+      "name": "¿Showreel?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -96,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "messageType": "video",
+        "mediaLink": "https://res.cloudinary.com/dqxjg4qlb/video/upload/q_auto,vc_h264,ac_aac,f_mp4,w_640,br_700k,du_60/Video_Project_wsxmx9.mp4",
+        "additionalFields": {}
+      },
+      "id": "showreel-video-001",
+      "name": "Responder WA Video",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        112
+      ],
+      "webhookId": "9716cd9d-c4cc-4fe3-961a-25319af33928",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "textBody": "={{ $('Detect Lead Complete').item.json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "showreel-text-001",
+      "name": "Responder WA Texto Showreel",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        112
+      ],
+      "webhookId": "04022a8e-8e44-4374-9043-6afbc95081da",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -1176,17 +1258,6 @@
         [
           {
             "node": "Detect Lead Complete",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Detect Lead Complete": {
-      "main": [
-        [
-          {
-            "node": "¿Handoff?",
             "type": "main",
             "index": 0
           }
@@ -1476,6 +1547,46 @@
           }
         ]
       ]
+    },
+    "Detect Lead Complete": {
+      "main": [
+        [
+          {
+            "node": "¿Showreel?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Showreel?": {
+      "main": [
+        [
+          {
+            "node": "Responder WA Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder WA Video": {
+      "main": [
+        [
+          {
+            "node": "Responder WA Texto Showreel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1484,7 +1595,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "143503cf-b57a-40d4-9fd0-4261b01e8dfc",
+  "versionId": "a92fb995-32aa-4c59-9f17-18aff4cc7095",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "ed753031efe2fb121206b75a4d94ee9275cc0586c9f54300749965ae24fb6b38"
