@@ -39,7 +39,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/\\./g, '');\nconst fechaTimestamp = fechaCorta.replace(/\\s+/g, '-');\nconst { phoneNumber, chatInput } = $input.first().json;\nreturn [{\n  json: {\n    phoneNumber,\n    chatInput,\n    upsertNuevo: {\n      'ID (Phone Number)': phoneNumber,\n      'Nombre': '',\n      'Email': '',\n      'Telefono': '',\n      'Proyecto': '',\n      'Presupuesto': '',\n      'Estado': 'Nuevo',\n      'Ultima Interaccion': fechaCorta,\n      'Transcripcion Corta': '',\n      'Timestamp': fechaTimestamp\n    }\n  }\n}];\n"
+        "jsCode": "const fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/\\./g, '');\nconst fechaTimestamp = new Date().toISOString();\nconst { phoneNumber, chatInput } = $input.first().json;\nreturn [{\n  json: {\n    phoneNumber,\n    chatInput,\n    upsertNuevo: {\n      'Teléfono': phoneNumber,\n      'Nombre': '',\n      'Email': '',\n      'Proyecto': '',\n      'Presupuesto': '',\n      'Estado': 'Nuevo',\n      'Última Interacción': fechaCorta,\n      'Transcripción': '',\n      'Timestamp': fechaTimestamp\n    }\n  }\n}];\n"
       },
       "id": "825da5f1-d560-4ab9-9564-64705b82df8c",
       "name": "Cliente Nuevo",
@@ -68,24 +68,23 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "ID": "={{ $json.upsertNuevo['ID (Phone Number)'] }}",
+            "Teléfono": "={{ $json.upsertNuevo['Teléfono'] }}",
             "Nombre": "={{ $json.upsertNuevo.Nombre }}",
             "Email": "={{ $json.upsertNuevo.Email }}",
-            "Teléfono": "={{ $json.upsertNuevo.Telefono }}",
             "Presupuesto": "={{ $json.upsertNuevo.Presupuesto }}",
             "Estado": "={{ $json.upsertNuevo.Estado }}",
-            "Última Interacción": "={{ $json.upsertNuevo['Ultima Interaccion'] }}",
-            "Transcripción": "={{ $json.upsertNuevo['Transcripcion Corta'] }}",
+            "Última Interacción": "={{ $json.upsertNuevo['Última Interacción'] }}",
+            "Transcripción": "={{ $json.upsertNuevo['Transcripción'] }}",
             "Timestamp": "={{ $json.upsertNuevo.Timestamp }}",
             "Proyecto": "={{ $json.upsertNuevo.Proyecto }}"
           },
           "matchingColumns": [
-            "ID"
+            "Teléfono"
           ],
           "schema": [
             {
-              "id": "ID",
-              "displayName": "ID",
+              "id": "Teléfono",
+              "displayName": "Teléfono",
               "required": false,
               "defaultMatch": true,
               "display": true,
@@ -106,16 +105,6 @@
             {
               "id": "Email",
               "displayName": "Email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Teléfono",
-              "displayName": "Teléfono",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -260,7 +249,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst HANDOFF_TAG = '[HUMAN_HANDOFF]';\nlet humanHandoff = false;\nif (agentOutput.includes(HANDOFF_TAG)) {\n  humanHandoff = true;\n  cleanMessage = agentOutput.replace(HANDOFF_TAG, '').trim();\n}\nconst SHOWREEL_TAG = '[SHOWREEL]';\nlet sendShowreel = false;\nif (agentOutput.includes(SHOWREEL_TAG)) {\n  sendShowreel = true;\n  cleanMessage = cleanMessage.replace(SHOWREEL_TAG, '').trim();\n  if (cleanMessage.length < 10) {\n    cleanMessage = '¡Aquí te compartimos un vistazo de lo que somos! 🎬 Cuéntame, ¿en qué proyecto estás trabajando o qué reto tienes en mente para BIPOLAR?';\n  }\n}\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,24}$/;\nconst emailOK = (e) => typeof e === 'string' && EMAIL_RE.test(e.trim()) && !e.includes('..');\nconst PRESUPUESTO_FALSO = /^(no\\s*(especificado|proporcionado|definido|disponible|tengo|aplica)|n\\/a|na|ninguno|sin\\s*presupuesto|desconocido|por\\s*definir|a\\s*definir|pendiente|\\.\\.\\.)$/i;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2 && !PRESUPUESTO_FALSO.test(p.trim());\nconst proyectoOK = (p) => p && p.trim().length >= 3 && !p.includes('...');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\nconst partial = wf.partialLeads[phoneNumber];\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && emailOK(fromUser.email) && !partial.email) partial.email = fromUser.email;\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst userText = (userMsg || '').trim();\nconst explicitNamePatterns = [/^(?:soy|me llamo|mi nombre es|me dicen)\\s+([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\\s]{1,40})/i];\nlet explicitName = null;\nfor (const re of explicitNamePatterns) {\n  const m = userText.match(re);\n  if (m && m[1]) { explicitName = m[1].trim().split(/\\s+/).slice(0, 3).join(' '); break; }\n}\nconst botAskedName = lastBotMsg.includes('nombre completo') ||\n  (lastBotMsg.includes('nombre') && !lastBotMsg.includes('tel') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userHasEmail = /@/.test(userText);\nconst userHasPhone = /\\d[\\d\\s\\-()]{5,}\\d/.test(userText);\nconst userIsMenuChoice = /^[1-3]\\b/.test(userText);\nconst userHasManyDigits = (userText.match(/\\d/g) || []).length > 4;\nconst PIROPOS = /^(hola|buenas|buenos dias|buenos días|no lo se|no lo sé|no se|no sé|no tengo|si|sí|no|guapa|linda|hermosa|bonita|genial|perfecto|gracias)$/i;\nconst looksLikeRealName = userText.length >= 2 && !userHasEmail && !userHasPhone && !userIsMenuChoice && !userHasManyDigits && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !PIROPOS.test(userText);\nif (explicitName && !partial.nombre) {\n  partial.nombre = explicitName.replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n} else if (botAskedName && looksLikeRealName && !partial.nombre) {\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n}\nconst lastWasProjectAsk = lastBotMsg.includes('tienes en mente') || lastBotMsg.includes('cuéntanos') || lastBotMsg.includes('cuentanos');\nif (lastWasProjectAsk && userText.length >= 3 && !partial.proyecto) {\n  partial.proyecto = userText.slice(0, 200);\n}\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try { agentParsed = JSON.parse(agentOutput.slice(start, end).trim()); } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre) && !/@/.test(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && emailOK(agentParsed.email)) partial.email = agentParsed.email.trim();\n  if (agentParsed.proyecto && proyectoOK(agentParsed.proyecto)) partial.proyecto = agentParsed.proyecto.trim().slice(0, 200);\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\nconst tieneBase = partial.nombre && partial.email;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst noSeRegex = /^(no(\\s+lo)?\\s*(se|sé)|no\\s+tengo(\\s+idea)?|na|n\\/a|no\\s+proporcionado|depende|m[áa]s\\s+adelante|todav[íi]a\\s+no|aun\\s+no|a[úu]n\\s+no|luego(\\s+te\\s+digo)?|despu[ée]s|ninguno|sin\\s+presupuesto)\\b.*$/i;\nconst isNoSeAnswer = noSeRegex.test(userLower) || userLower === 'no' || userLower === 'si' || userLower === 'sí';\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\nconst cierreTexto = (nom) => '¡Excelente, ' + (nom || 'gracias') + '! 🚀 Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨';\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto) && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n  if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n} else if (agentParsed && tieneBase && (!presupuestoOK(agentParsed.presupuesto) || !lastWasBudgetAsk)) {\n  if (lastWasBudgetAsk) {\n    leadComplete = true;\n    leadData = { ...partial, presupuesto: 'No proporcionado' };\n    if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n  } else {\n    partial.leadCompleteEmitted = false;\n    cleanMessage = '¡Perfecto, ya tenemos tu nombre y email! Solo una pregunta más: ¿cuentas con un presupuesto aproximado para tu proyecto? (Puedes decir \"no sé\" si aún no lo defines) 💰';\n  }\n} else if (tieneBase && lastWasBudgetAsk) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n} else if (partial.leadCompleteEmitted && tieneBase && userLower.length > 0) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n}\nif (leadData && !leadData.proyecto) leadData.proyecto = partial.proyecto || '';\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\nif (leadComplete) delete wf.partialLeads[phoneNumber];\nconst soloUser = wf.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = fechaCorta.replace(/\\s+/g, '-');\nconst procLookup = $('Process Lookup').item.json;\nconst estadoActual = procLookup?.Estado || '';\nconst yaCalificado = estadoActual === 'Calificado';\nif (yaCalificado) { leadComplete = false; leadData = null; }\nconst upsertParcial = (leadComplete || yaCalificado) ? null : {\n  'ID (Phone Number)': phoneNumber,\n  'Estado': yaCalificado ? 'Calificado' : 'Nuevo',\n  'Ultima Interaccion': fechaCorta,\n  'Transcripcion Corta': transcripcion,\n  ...(partial.nombre      && { 'Nombre': partial.nombre }),\n  ...(partial.email       && { 'Email': partial.email }),\n  ...(partial.proyecto    && { 'Proyecto': partial.proyecto }),\n  ...(partial.presupuesto && { 'Presupuesto': partial.presupuesto }),\n};\nreturn [{ json: { phoneNumber, cleanMessage, leadComplete, leadData, transcripcion, fechaCorta, fechaTimestamp, upsertParcial, humanHandoff, sendShowreel, senderName: $('Extract Message').item.json.senderName } }];\n"
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst HANDOFF_TAG = '[HUMAN_HANDOFF]';\nlet humanHandoff = false;\nif (agentOutput.includes(HANDOFF_TAG)) {\n  humanHandoff = true;\n  cleanMessage = agentOutput.replace(HANDOFF_TAG, '').trim();\n}\nconst SHOWREEL_TAG = '[SHOWREEL]';\nlet sendShowreel = false;\nif (agentOutput.includes(SHOWREEL_TAG)) {\n  sendShowreel = true;\n  cleanMessage = cleanMessage.replace(SHOWREEL_TAG, '').trim();\n  if (cleanMessage.length < 10) {\n    cleanMessage = '¡Aquí te compartimos un vistazo de lo que somos! 🎬 Cuéntame, ¿en qué proyecto estás trabajando o qué reto tienes en mente para BIPOLAR?';\n  }\n}\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,24}$/;\nconst emailOK = (e) => typeof e === 'string' && EMAIL_RE.test(e.trim()) && !e.includes('..');\nconst PRESUPUESTO_FALSO = /^(no\\s*(especificado|proporcionado|definido|disponible|tengo|aplica)|n\\/a|na|ninguno|sin\\s*presupuesto|desconocido|por\\s*definir|a\\s*definir|pendiente|\\.\\.\\.)$/i;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2 && !PRESUPUESTO_FALSO.test(p.trim());\nconst proyectoOK = (p) => p && p.trim().length >= 3 && !p.includes('...');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\nconst partial = wf.partialLeads[phoneNumber];\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && emailOK(fromUser.email) && !partial.email) partial.email = fromUser.email;\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst userText = (userMsg || '').trim();\nconst explicitNamePatterns = [/^(?:soy|me llamo|mi nombre es|me dicen)\\s+([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\\s]{1,40})/i];\nlet explicitName = null;\nfor (const re of explicitNamePatterns) {\n  const m = userText.match(re);\n  if (m && m[1]) { explicitName = m[1].trim().split(/\\s+/).slice(0, 3).join(' '); break; }\n}\nconst botAskedName = lastBotMsg.includes('nombre completo') ||\n  (lastBotMsg.includes('nombre') && !lastBotMsg.includes('tel') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userHasEmail = /@/.test(userText);\nconst userHasPhone = /\\d[\\d\\s\\-()]{5,}\\d/.test(userText);\nconst userIsMenuChoice = /^[1-3]\\b/.test(userText);\nconst userHasManyDigits = (userText.match(/\\d/g) || []).length > 4;\nconst PIROPOS = /^(hola|buenas|buenos dias|buenos días|no lo se|no lo sé|no se|no sé|no tengo|si|sí|no|guapa|linda|hermosa|bonita|genial|perfecto|gracias)$/i;\nconst looksLikeRealName = userText.length >= 2 && !userHasEmail && !userHasPhone && !userIsMenuChoice && !userHasManyDigits && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !PIROPOS.test(userText);\nif (explicitName && !partial.nombre) {\n  partial.nombre = explicitName.replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n} else if (botAskedName && looksLikeRealName && !partial.nombre) {\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n}\nconst lastWasProjectAsk = lastBotMsg.includes('tienes en mente') || lastBotMsg.includes('cuéntanos') || lastBotMsg.includes('cuentanos');\nif (lastWasProjectAsk && userText.length >= 3 && !partial.proyecto) {\n  partial.proyecto = userText.slice(0, 200);\n}\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try { agentParsed = JSON.parse(agentOutput.slice(start, end).trim()); } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre) && !/@/.test(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && emailOK(agentParsed.email)) partial.email = agentParsed.email.trim();\n  if (agentParsed.proyecto && proyectoOK(agentParsed.proyecto)) partial.proyecto = agentParsed.proyecto.trim().slice(0, 200);\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\nconst tieneBase = partial.nombre && partial.email;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst noSeRegex = /^(no(\\s+lo)?\\s*(se|sé)|no\\s+tengo(\\s+idea)?|na|n\\/a|no\\s+proporcionado|depende|m[áa]s\\s+adelante|todav[íi]a\\s+no|aun\\s+no|a[úu]n\\s+no|luego(\\s+te\\s+digo)?|despu[ée]s|ninguno|sin\\s+presupuesto)\\b.*$/i;\nconst isNoSeAnswer = noSeRegex.test(userLower) || userLower === 'no' || userLower === 'si' || userLower === 'sí';\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\nconst cierreTexto = (nom) => '¡Excelente, ' + (nom || 'gracias') + '! 🚀 Con esto tenemos lo necesario para que nuestro equipo analice tu proyecto. Un humano de BIPOLAR se pondrá en contacto contigo muy pronto. ¡Es normal ser bipolar y estamos listos para crear algo grande juntos! ✨';\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto) && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n  if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n} else if (agentParsed && tieneBase && (!presupuestoOK(agentParsed.presupuesto) || !lastWasBudgetAsk)) {\n  if (lastWasBudgetAsk) {\n    leadComplete = true;\n    leadData = { ...partial, presupuesto: 'No proporcionado' };\n    if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n  } else {\n    partial.leadCompleteEmitted = false;\n    cleanMessage = '¡Perfecto, ya tenemos tu nombre y email! Solo una pregunta más: ¿cuentas con un presupuesto aproximado para tu proyecto? (Puedes decir \"no sé\" si aún no lo defines) 💰';\n  }\n} else if (tieneBase && lastWasBudgetAsk) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n} else if (partial.leadCompleteEmitted && tieneBase && userLower.length > 0) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n}\nif (leadData && !leadData.proyecto) leadData.proyecto = partial.proyecto || '';\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\nif (leadComplete) delete wf.partialLeads[phoneNumber];\nconst soloUser = wf.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = new Date().toISOString();\nconst procLookup = $('Process Lookup').item.json;\nconst estadoActual = procLookup?.Estado || '';\nconst yaCalificado = estadoActual === 'Calificado';\nif (yaCalificado) { leadComplete = false; leadData = null; }\nconst upsertParcial = (leadComplete || yaCalificado) ? null : {\n  'Teléfono': phoneNumber,\n  'Estado': yaCalificado ? 'Calificado' : 'Nuevo',\n  'Última Interacción': fechaCorta,\n  'Transcripción': transcripcion,\n  ...(partial.nombre      && { 'Nombre': partial.nombre }),\n  ...(partial.email       && { 'Email': partial.email }),\n  ...(partial.proyecto    && { 'Proyecto': partial.proyecto }),\n  ...(partial.presupuesto && { 'Presupuesto': partial.presupuesto }),\n};\nreturn [{ json: { phoneNumber, cleanMessage, leadComplete, leadData, transcripcion, fechaCorta, fechaTimestamp, upsertParcial, humanHandoff, sendShowreel, senderName: $('Extract Message').item.json.senderName } }];\n"
       },
       "id": "c952c271-5b4c-4378-9e82-907758ded443",
       "name": "Detect Lead Complete",
@@ -306,7 +295,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'ID (Phone Number)': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Proyecto': leadData.proyecto || '',\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Ultima Interaccion': fechaCorta,\n      'Transcripcion Corta': transcripcion,\n      'Timestamp': fechaTimestamp || fechaCorta.replace(/\\s+/g, '-')\n    }\n  }\n}];\n"
+        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'Teléfono': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Proyecto': leadData.proyecto || '',\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Última Interacción': fechaCorta,\n      'Transcripción': transcripcion,\n      'Timestamp': fechaTimestamp || fechaCorta.replace(/\\s+/g, '-')\n    }\n  }\n}];\n"
       },
       "id": "70c2fd5b-377a-4095-a860-1072bfe08b90",
       "name": "Cliente Interesado",
@@ -335,24 +324,23 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "ID": "={{ $json.upsertCalificado['ID (Phone Number)'] }}",
+            "Teléfono": "={{ $json.upsertCalificado['Teléfono'] }}",
             "Nombre": "={{ $json.upsertCalificado.Nombre }}",
             "Email": "={{ $json.upsertCalificado.Email }}",
-            "Teléfono": "={{ $json.upsertCalificado.Telefono }}",
             "Presupuesto": "={{ $json.upsertCalificado.Presupuesto }}",
             "Estado": "={{ $json.upsertCalificado.Estado }}",
-            "Última Interacción": "={{ $json.upsertCalificado['Ultima Interaccion'] }}",
-            "Transcripción": "={{ $json.upsertCalificado['Transcripcion Corta'] }}",
+            "Última Interacción": "={{ $json.upsertCalificado['Última Interacción'] }}",
+            "Transcripción": "={{ $json.upsertCalificado['Transcripción'] }}",
             "Timestamp": "={{ $json.upsertCalificado.Timestamp }}",
             "Proyecto": "={{ $json.upsertCalificado.Proyecto }}"
           },
           "matchingColumns": [
-            "ID"
+            "Teléfono"
           ],
           "schema": [
             {
-              "id": "ID",
-              "displayName": "ID",
+              "id": "Teléfono",
+              "displayName": "Teléfono",
               "required": false,
               "defaultMatch": true,
               "display": true,
@@ -373,16 +361,6 @@
             {
               "id": "Email",
               "displayName": "Email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Teléfono",
-              "displayName": "Teléfono",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -475,7 +453,7 @@
       "parameters": {
         "sendTo": "luis.sanchezag@gmail.com",
         "subject": "=?? Lead BIPOLAR - {{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}",
-        "message": "=<h2>Nuevo Prospecto Calificado</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Email }}</td></tr>\n<tr><td><b>WhatsApp</b></td><td>{{ $('Extract Message').item.json.phoneNumber }}</td></tr>\n<tr><td><b>Proyecto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Proyecto || 'No especificado' }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Presupuesto || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado['Transcripcion Corta'] }}</td></tr>\n</table>",
+        "message": "=<h2>Nuevo Prospecto Calificado</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Email }}</td></tr>\n<tr><td><b>WhatsApp</b></td><td>{{ $('Extract Message').item.json.phoneNumber }}</td></tr>\n<tr><td><b>Proyecto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Proyecto || 'No especificado' }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Presupuesto || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado['Transcripción'] }}</td></tr>\n</table>",
         "options": {
           "appendAttribution": false
         }
@@ -522,7 +500,7 @@
     },
     {
       "parameters": {
-        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/values/A:J",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/values/A:I",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleSheetsOAuth2Api",
         "options": {}
@@ -601,7 +579,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst response = $input.first().json;\nconst rows = response?.values || [];\nif (rows.length === 0) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst headers = rows[0];\nconst idIdx = headers.indexOf('ID');\nconst estadoIdx = headers.indexOf('Estado');\nconst nombreIdx = headers.indexOf('Nombre');\nif (idIdx === -1) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst norm = (p) => String(p || '').replace(/\\D/g, '');\nlet found = null;\nfor (let i = 1; i < rows.length; i++) {\n  if (norm(rows[i][idIdx]) === norm(phoneNumber)) {\n    found = rows[i];\n    break;\n  }\n}\nif (!found) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nreturn [{ json: {\n  found: true,\n  Estado: found[estadoIdx] || '',\n  Nombre: found[nombreIdx] || '',\n  phoneNumber\n} }];"
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst response = $input.first().json;\nconst rows = response?.values || [];\nif (rows.length === 0) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst headers = rows[0];\nconst idIdx = headers.indexOf('Teléfono');\nconst estadoIdx = headers.indexOf('Estado');\nconst nombreIdx = headers.indexOf('Nombre');\nif (idIdx === -1) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst norm = (p) => String(p || '').replace(/\\D/g, '');\nlet found = null;\nfor (let i = 1; i < rows.length; i++) {\n  if (norm(rows[i][idIdx]) === norm(phoneNumber)) {\n    found = rows[i];\n    break;\n  }\n}\nif (!found) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nreturn [{ json: {\n  found: true,\n  Estado: found[estadoIdx] || '',\n  Nombre: found[nombreIdx] || '',\n  phoneNumber\n} }];"
       },
       "id": "ca7f3f18-1bdb-47e2-ba3f-6b34a0385e90",
       "name": "Process Lookup",
@@ -696,23 +674,23 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "ID": "={{ $json.upsertParcial['ID (Phone Number)'] }}",
+            "Teléfono": "={{ $json.upsertParcial['Teléfono'] }}",
             "Nombre": "={{ $json.upsertParcial.Nombre }}",
             "Email": "={{ $json.upsertParcial.Email }}",
-            "Teléfono": "={{ $json.upsertParcial.Telefono }}",
             "Proyecto": "={{ $json.upsertParcial.Proyecto }}",
             "Presupuesto": "={{ $json.upsertParcial.Presupuesto }}",
             "Estado": "={{ $json.upsertParcial.Estado }}",
-            "Última Interacción": "={{ $json.upsertParcial['Ultima Interaccion'] }}",
-            "Transcripción": "={{ $json.upsertParcial['Transcripcion Corta'] }}"
+            "Última Interacción": "={{ $json.upsertParcial['Última Interacción'] }}",
+            "Transcripción": "={{ $json.upsertParcial['Transcripción'] }}",
+            "Timestamp": "={{ new Date().toISOString() }}"
           },
           "matchingColumns": [
-            "ID"
+            "Teléfono"
           ],
           "schema": [
             {
-              "id": "ID",
-              "displayName": "ID",
+              "id": "Teléfono",
+              "displayName": "Teléfono",
               "required": false,
               "defaultMatch": true,
               "display": true,
@@ -733,16 +711,6 @@
             {
               "id": "Email",
               "displayName": "Email",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Teléfono",
-              "displayName": "Teléfono",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -799,12 +767,22 @@
               "type": "string",
               "canBeUsedToMatch": true,
               "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         },
-        "options": {}
+        "options": {},
+        "continueOnFail": true
       },
       "id": "a1b2c3d4-0002-0002-0002-000000000002",
       "name": "Sheets - Parcial",
@@ -1152,8 +1130,11 @@
         "phoneNumberId": "1103955202801675",
         "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
         "messageType": "video",
-        "mediaLink": "https://res.cloudinary.com/dqxjg4qlb/video/upload/q_auto,vc_h264,ac_aac,f_mp4,w_640,br_700k,du_60/Video_Project_wsxmx9.mp4",
-        "additionalFields": {}
+        "additionalFields": {
+          "caption": "Esto somos: BIPOLAR 🎬"
+        },
+        "mediaPath": "useMediaLink",
+        "mediaLink": "https://res.cloudinary.com/dqxjg4qlb/video/upload/q_auto,vc_h264,ac_aac,f_mp4,w_640,br_700k,du_60/Video_Project_wsxmx9.mp4"
       },
       "id": "showreel-video-001",
       "name": "Responder WA Video",
@@ -1196,7 +1177,6 @@
       }
     }
   ],
-  "pinData": {},
   "connections": {
     "WhatsApp Trigger": {
       "main": [
@@ -1589,18 +1569,81 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "a92fb995-32aa-4c59-9f17-18aff4cc7095",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "ed753031efe2fb121206b75a4d94ee9275cc0586c9f54300749965ae24fb6b38"
+  "staticData": {
+    "global": {
+      "resetEpochs": {
+        "5218112817608": 1777831135787
+      },
+      "history": {
+        "5218112817608": [
+          "U: luis angel",
+          "B: Gracias, Luis Angel. ¿Cuál es tu email?",
+          "U: 8112817608",
+          "B: Ese no parece un email válido. Por favor compárteme tu correo electrónico (ej: nombre@dominio.com) 📧",
+          "U: perdon luis.sanchezag@gmail.com",
+          "B: Perfecto, Luis Angel. Cuéntanos brevemente: ¿qué tienes en mente? (proyecto, idea, reto que quieres resolver con BIPOLAR)",
+          "U: quiero hablar con un humano",
+          "B: ¡Claro! Te voy a conectar con un agente de BIPOLAR ahora mismo. Un momento por favor 🧑‍💼",
+          "U: hola",
+          "B: ¡Hola! 👋 En BIPOLAR, la razón y la emoción se fusionan para crear ideas audaces. ¡Es normal ser bipolar! Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy? 1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias). 2️⃣ Conocer casos de éxito (Uber, Tim Hortons, Molotov). 3️⃣ Ser contactado por el equipo de ventas. 4️⃣ Hablar con alguien de Bipolar. 5️⃣ Ver showreel.",
+          "U: Hola",
+          "B: ¡Hola! 👋 En BIPOLAR, creemos que la creatividad y la estrategia son dos caras de la misma moneda, ¡y es normal ser bipolar! Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy? 1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias). 2️⃣ Conocer casos de éxito (Uber, Tim Hortons, Molotov). 3️⃣ Ser contactado por el equipo de ventas. 4️⃣ Hablar con alguien de Bipolar. 5️⃣ Ver showreel."
+        ],
+        "5218115889398": [
+          "U: hola",
+          "B: ¡Hola! 👋 En BIPOLAR, mezclamos la razón y la emoción para crear ideas que impactan. ¡Es normal ser bipolar! Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy? 1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias). 2️⃣ Ver casos de éxito (Uber, Tim Hortons, Molotov). 3️⃣ Hablar con el equipo de ventas o cotizar.",
+          "U: Que puedes hacer por mi hoy?",
+          "B: ¡Es normal ser bipolar! Hoy puedo ayudarte a explorar todo lo que BIPOLAR tiene para ofrecerte. ✨ Puedes: 1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias). 2️⃣ Ver casos de éxito (Uber, Tim Hortons, Molotov). 3️⃣ Hablar con el equipo de ventas o cotizar. ¿Cuál opción te interesa más?",
+          "U: Muestrame una campaña de Branding",
+          "B: ¡Excelente elección! Un gran ejemplo de nuestro trabajo en Branding es el lanzamiento de **Tim Hortons en México**. 🚀 Ayudamos a esta icónica marca canadiense a aterrizar y conectar con el público mexicano, construyendo su identidad desde cero en un nuevo mercado. Puedes ver más detalles aquí: [https://bipolar.mx/es/tim/](https://bipolar.mx/es/tim/) ¿Te gustaría explorar otro caso o conocer más sobre nuestros servicios de Branding?",
+          "U: quienes son los lideres de Bipolar?",
+          "B: ¡Es normal ser bipolar! ✨ En BIPOLAR, contamos con un equipo de talentos que mezcla razón y emoción en cada proyecto. Uno de los fundadores y una figura clave es César, quien es el líder de los antis, filántropo y pensador. Es el ganador indiscutible del puercoton, rival político del diputado y fundador de bipolar. ¿Te gustaría conocer más sobre cómo nuestro equipo creativo impulsa las marcas?",
+          "U: Buenos días",
+          "B: ¡Hola! 👋 En BIPOLAR, creemos que la creatividad fluye mejor cuando abrazamos todas las facetas de la inspiración. ¡Es normal ser bipolar! Soy el asistente virtual de la agencia. ¿Qué te gustaría explorar hoy? 1️⃣ Conocer nuestros servicios (Branding, Campañas, Experiencias). 2️⃣ Conocer casos de éxito (Uber, Tim Hortons, Molotov). 3️⃣ Ser contactado por el equipo de ventas. 4️⃣ Hablar con alguien de Bipolar. 5️⃣ Ver showreel.",
+          "U: Me puedes dar el status de mi campaña",
+          "B: ¡Claro! Para darte el status de tu campaña, te voy a conectar con un agente de BIPOLAR ahora mismo. Un momento por favor 🧑‍💼"
+        ],
+        "5218125672128": [
+          "U: 1",
+          "B: ¡Excelente elección! En BIPOLAR, ofrecemos una gama completa de servicios para impulsar tu marca. Nos especializamos en: * **Branding:** Construimos identidades de marca sólidas y memorables. * **Campañas:** Desarrollamos estrategias de comunicación impactantes y efectivas. * **Experiencias:** Creamos interacciones únicas que conectan con tu audiencia. ¿Te gustaría saber más sobre alguno de ellos o prefieres ver ejemplos de nuestro trabajo? ✨",
+          "U: Campañas",
+          "B: Nuestras campañas son el punto donde la estrategia y la creatividad se encuentran para generar resultados. Diseñamos desde campañas publicitarias integrales hasta lanzamientos de productos y activaciones, siempre con un enfoque audaz y medible. 🚀 ¿Hay algún tipo de campaña en particular que te interese o te gustaría que te contara sobre nuestros casos de éxito en esta área?",
+          "U: Si",
+          "B: ¡Claro! Hemos creado campañas memorables para diversas marcas. Por ejemplo, trabajamos con **Uber** en su campaña \"Juntos en el viaje\" y con **Molotov** en \"Sabor Molotov\", logrando conexiones auténticas con sus audiencias. Puedes explorar más detalles de estos proyectos en nuestra web: * Uber: https://bipolar.mx/es/uber/ * Molotov: https://bipolar.mx/es/molotov/ ¿Hay algo más que te gustaría saber sobre nuestras campañas o prefieres explorar otro servicio?",
+          "U: Otro servicio",
+          "B: Perfecto. Además de Campañas, también nos especializamos en **Branding** y **Experiencias**. ¿Cuál de estos te gustaría explorar ahora? 💡",
+          "U: Branding",
+          "B: En Branding, somos expertos en construir la esencia de tu marca desde cero o revitalizarla. Desarrollamos identidades visuales, verbales y estratégicas que resuenan con tu público, creando una conexión emocional duradera. ✨ ¿Te gustaría conocer algún caso de éxito relacionado con Branding o tienes alguna pregunta específica sobre este servicio?",
+          "U: Si casi de exito",
+          "B: ¡Claro! Un gran ejemplo de nuestro trabajo en Branding es el lanzamiento de **Tim Hortons México**. Ayudamos a esta icónica marca a establecer su identidad y a conectar con el público mexicano, construyendo una presencia sólida en el mercado. Puedes conocer más sobre este proyecto aquí: https://bipolar.mx/es/tim/ ¿Hay algo más que te gustaría saber sobre Branding o prefieres que hablemos de otro tema?"
+        ]
+      },
+      "partialLeads": {
+        "5218115889398": {},
+        "5218125672128": {},
+        "5218112817608": {
+          "nombre": "Luis",
+          "proyecto": "Me llamo Luis",
+          "email": "luis.sanchezag@gmail.com"
+        }
+      },
+      "humanMode": {
+        "5218115889398": true
+      },
+      "humanModeAt": {
+        "5218115889398": 1777826344431
+      }
+    }
   },
-  "id": "Y2SJ2fB9APdgxadn",
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "tags": [
     {
       "updatedAt": "2026-05-02T02:35:26.387Z",
@@ -1608,5 +1651,6 @@
       "id": "qeKMhPYub3sjvaQf",
       "name": "BIPOLAR"
     }
-  ]
+  ],
+  "active": false
 }
