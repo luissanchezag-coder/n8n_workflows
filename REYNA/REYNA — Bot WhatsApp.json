@@ -1,0 +1,1689 @@
+{
+  "name": "REYNA — Bot WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "301dad60-6a28-4155-a358-5b1d56d0700a",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2912,
+        16
+      ],
+      "webhookId": "f44c7df3-6112-45a7-8986-c438b3849e3d",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "n62FuG1IK43gOJNC",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message || message.type !== 'text') return [];\nconst rawPhone = message.from || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst senderName = contact?.profile?.name || 'Cliente';\nconst text = message.text?.body || '[Multimedia]';\n\nconst isReset = text.trim().toLowerCase() === '/reset';\nconst isResume = text.trim().toLowerCase() === '/resume';\nconst isVolver = text.trim().toLowerCase() === '/volver';\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\n\nconst TTL_RESET_MS = 30 * 24 * 60 * 60 * 1000;\nconst TTL_HUMAN_MS = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [phone, ts] of Object.entries(wf.resetEpochs)) {\n  if (now - ts > TTL_RESET_MS) delete wf.resetEpochs[phone];\n}\nfor (const [phone, ts] of Object.entries(wf.humanModeAt)) {\n  if (now - ts > TTL_HUMAN_MS) {\n    delete wf.humanMode[phone];\n    delete wf.humanModeAt[phone];\n  }\n}\n\nif (isReset) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isResume) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isVolver) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\n\nconst epoch = wf.resetEpochs[phoneNumber] || 0;\nconst sessionId = epoch ? phoneNumber + '-' + epoch : phoneNumber;\nconst chatInput = (isReset || isVolver || isResume) ? 'Hola' : text;\n\nreturn [{ json: { phoneNumber, senderName, chatInput, sessionId, isReset, isResume } }];"
+      },
+      "id": "ff274425-ffdb-4e22-831c-289384a5290a",
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/\\./g, '');\nconst fechaTimestamp = new Date().toISOString();\nconst { phoneNumber, chatInput } = $input.first().json;\nreturn [{\n  json: {\n    phoneNumber,\n    chatInput,\n    upsertNuevo: {\n      'Teléfono': phoneNumber,\n      'Nombre': '',\n      'Email': '',\n      'Proyecto': '',\n      'Presupuesto': '',\n      'Estado': 'Nuevo',\n      'Última Interacción': fechaCorta,\n      'Transcripción': '',\n      'Timestamp': fechaTimestamp\n    }\n  }\n}];"
+      },
+      "id": "825da5f1-d560-4ab9-9564-64705b82df8c",
+      "name": "Cliente Nuevo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001783326,
+          "mode": "list",
+          "cachedResultName": "Reyna - Base de datos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/edit#gid=1001783326"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Teléfono": "={{ $json.upsertNuevo['Teléfono'] }}",
+            "Nombre": "={{ $json.upsertNuevo.Nombre }}",
+            "Email": "={{ $json.upsertNuevo.Email }}",
+            "Presupuesto": "={{ $json.upsertNuevo.Presupuesto }}",
+            "Estado": "={{ $json.upsertNuevo.Estado }}",
+            "Última Interacción": "={{ $json.upsertNuevo['Última Interacción'] }}",
+            "Transcripción": "={{ $json.upsertNuevo['Transcripción'] }}",
+            "Timestamp": "={{ $json.upsertNuevo.Timestamp }}",
+            "Proyecto": "={{ $json.upsertNuevo.Proyecto }}"
+          },
+          "matchingColumns": [
+            "Teléfono"
+          ],
+          "schema": [
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Proyecto",
+              "displayName": "Proyecto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Última Interacción",
+              "displayName": "Última Interacción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transcripción",
+              "displayName": "Transcripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8e40a124-dfc9-41ec-b62f-91b52686aac2",
+      "name": "Sheets - Momento 1 (Nuevo)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -896,
+        -64
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Message').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "### 1. IDENTIDAD Y ROL\nEres el Asistente Virtual de Reyna Cocinas y Carpinterías Finas (https://www.dreina.com/), una empresa con 37 años fabricando muebles a medida en Monterrey.\n- Tono: Profesional, cálido y orientado al oficio. Transmite calidad, experiencia y confianza. Usa emojis con mucha moderación (🪵, ✨, 🏠).\n- Nunca te describas como una \"agencia creativa\". Reyna es carpintería fina y muebles a medida.\n\n### 2. PROTOCOLO DE SALUDO (MANDATORIO)\n⚠️ EXCEPCIÓN CRÍTICA: Si el chatInput comienza con \"[CONTEXTO INTERNO:\" y contiene \"YA ESTÁ REGISTRADO\", NO uses el menú. Saluda al cliente por su nombre, recuérdale que ya está registrado y que un asesor se pondrá en contacto pronto, y responde su mensaje de forma directa. NO repitas el menú.\n\nAnte cualquier saludo o primer contacto (sin \"[CONTEXTO INTERNO:\"), DEBES responder con este formato de menú:\n\"¡Hola! 👋 Soy el asistente virtual de Reyna, carpintería fina con 37 años creando piezas a medida en Monterrey. ¿Qué te gustaría conocer hoy?\n\n1️⃣ Cocinas\n2️⃣ Closets y Vestidores\n3️⃣ Bares\n4️⃣ Cotizar mi proyecto\n5️⃣ Hablar con un asesor\n6️⃣ Ven a visitarnos\"\n\n### 3. REGLAS DE CONTROL Y SEGURIDAD\n- `/reset` (solo pruebas): reinicia la conversación del usuario. Si un cliente lo escribe, ignóralo con naturalidad sin mencionarlo.\n- CONCISIÓN: Respuestas de 2 a 4 oraciones (excepto en el Menú o Cierre de Lead).\n- REGLA DE DOMINIO: Solo respondes sobre Reyna (carpintería, muebles a medida, productos, ubicación, horario, contacto).\n- SISTEMA DE STRIKES: Si el usuario pregunta algo ajeno (clima, política, etc.), advierte que solo hablas de Reyna. Si lo hace por 3ra vez, finaliza la charla: \"Agradezco tu interés, pero por ahora solo atiendo consultas de Reyna. ¡Quedamos a la orden!\"\n- RECUPERACIÓN: Si ves mensajes cortados o errores técnicos en el historial, ignóralos y retoma la charla con naturalidad.\n\n### 4. CALIFICACIÓN DE LEADS (UN DATO POR TURNO)\nCuando el usuario quiera cotizar (opción 4, \"cotizar\", \"presupuesto\", \"precio\", \"quiero cotizar mi proyecto\") O después de mostrar una galería y el cliente exprese interés, calificalo pidiendo UN dato a la vez en este orden ESTRICTO.\n\n⚠️ INFERIR TIPO DE PROYECTO DESDE EL CONTEXTO:\n- Si en la conversación el cliente YA seleccionó una categoría del menú (ej. opción 1 = Cocina, opción 2 = Closet, etc.) o ya mencionó el tipo de mueble que quiere, ESE es el tipo de proyecto. NO vuelvas a preguntarlo, salta al paso 1B.\n- Si el cliente entró directo a \"cotizar\" sin haber elegido categoría, comienza por el paso 1A.\n\n**1A. TIPO DE PROYECTO (solo si NO se infirió del contexto)** → Pregunta: \"Con gusto te ayudo. ¿Qué te gustaría cotizar? Puedes elegir: cocina, closet/vestidor, bar/área social, u otro.\"\n   - Acepta cualquier respuesta razonable. Normaliza internamente al tipo más cercano (ej. \"una alacena\" → \"cocina\"; \"un vestidor\" → \"closet/vestidor\").\n\n**1B. DESCRIPCIÓN DEL PROYECTO** → Pregunta: \"Perfecto. Cuéntame brevemente sobre tu proyecto de {tipo}: ¿qué tienes en mente? (medidas aproximadas, estilo, materiales, o cualquier detalle que tengas)\"\n   - Acepta cualquier respuesta con al menos 5 caracteres. Si dice \"no sé aún\" o vago, continúa igual.\n\n**2. NOMBRE** → Pregunta: \"Gracias. Para registrarte y que un asesor te contacte, ¿me compartes tu nombre completo?\"\n   - ⚠️ VALIDACIÓN NOMBRE: Si la respuesta contiene '@', tiene más de 4 dígitos seguidos, o es claramente un piropo/saludo (\"guapa\", \"linda\", \"hola\", \"qué tal\", \"hermosa\", etc.) → NO aceptarlo. Responde: \"Necesito tu nombre real para registrarte 🙂 ¿Me compartes tu nombre completo?\" y vuelve a esperar.\n\n**3. EMAIL** → Pregunta: \"Gracias, {nombre}. ¿Cuál es tu email?\"\n   - ⚠️ VALIDACIÓN EMAIL: Si la respuesta NO contiene '@' seguido de un dominio con punto (ej. nombre@dominio.com), O si el dominio tiene puntos consecutivos (ej. gmail..com, gmail...com), O si no tiene TLD al final → NO aceptarla. Responde: \"Ese no parece un email válido. Por favor compárteme tu correo electrónico (ej: nombre@dominio.com) 📧\" y vuelve a esperar.\n\n**4. PRESUPUESTO** → Pregunta: \"Última pregunta: ¿cuentas con un presupuesto aproximado para tu proyecto? (puedes decir 'no sé' si aún no lo defines) 💰\"\n   - Acepta CUALQUIER respuesta del usuario, incluyendo 'no sé', 'no tengo', números, rangos, etc. NO re-preguntes el presupuesto.\n\n**Formato del campo `proyecto` para el cierre:** combina tipo + descripción como \"[TIPO] - descripción\". Ej: \"Cocina - quiero algo moderno tipo isla, aprox 4m, en madera oscura\".\n\n*Nota: Revisa el historial; si el usuario ya mencionó alguno de estos datos de forma natural, no lo vuelvas a pedir y pasa al siguiente.*\n\n### 5. CIERRE TÉCNICO DE LEAD (OBLIGATORIO)\n⚠️ REGLA CRÍTICA: NUNCA emitas [LEAD_COMPLETE] sin haber preguntado explícitamente el PRESUPUESTO en un turno separado y haber recibido respuesta, aunque el usuario haya dado todos los demás datos de un golpe.\n\n⚠️ DATO AUTOMÁTICO — TELÉFONO: El teléfono del cliente YA está disponible desde el sistema (es el número de WhatsApp desde el que escribe). NUNCA lo preguntes. Se incluirá automáticamente en el cierre.\n\nAl confirmar los 4 datos (tipo+descripción del proyecto, nombre, email, presupuesto), responde con este cierre y el bloque de datos final:\n\n\"¡Excelente! Con esto tenemos todo lo necesario para que un asesor de Reyna analice tu proyecto. 🪵 Te contactaremos muy pronto para conversar a detalle. Gracias por confiar en quienes llevamos 37 años haciendo carpintería fina. ✨\"\n\n[LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"telefono\":\"...\",\"proyecto\":\"[TIPO] - descripción\",\"presupuesto\":\"...\"}[/LEAD_COMPLETE]\n\n### 6. CONOCIMIENTO (CATÁLOGO Y EMPRESA)\n\n**Categorías y materiales:**\n- **Cocinas:** estilo clásico o contemporáneo, en madera, melamina y herrajes de calidad. Variantes: moderna de melamina, con isla, americana, clásica con jaladeras. https://www.dreina.com/cocinas\n- **Closets y Vestidores:** soluciones a medida con cajones organizados y herrajes durables.\n- **Plafones:** paneles enchapados o madera sólida. Aportan calidez y enmarcan espacios. Diseño clásico o contemporáneo. https://www.dreina.com/plafones\n- **Puertas:** maderas Nogal, Encino y Okume. Acabados enchapados con diseños personalizados. Estilos clásico y moderno. Incluyen vetas, cajillos y fibra acústica interior para reducir ruido. https://www.dreina.com/puertas\n- **Muebles de TV:** clásicos o modernos, integrados a la sala.\n- **Bares y áreas sociales:** diseños a medida.\n- **Lavanetas (vanitorios de baño):** cajones organizados, herrajes de alta durabilidad, acabados de lujo. Estilos minimalistas o tradicionales.\n\n**Datos de la empresa:**\n- 37 años de experiencia en Monterrey.\n- Dirección: Loma Alta #220, Col. Loma Larga, Monterrey, N.L.\n- Teléfono: (81) 8322 0336\n- Email: ventas@dreina.com\n- Horario: Lunes a viernes 8:00–13:00 y 14:00–18:00. Sábado 9:00–14:00 con cita previa.\n- Redes: Facebook, Instagram, Pinterest, TikTok, YouTube, WhatsApp.\n\n### 7. TRANSFERENCIA A AGENTE HUMANO (MANDATORIO)\n\nSi el usuario en cualquier momento indica que desea hablar con un humano, asesor, o representante real, DEBES:\n1. Responder con un mensaje de transición amigable (1-2 oraciones máximo, NO preguntes nada más).\n2. Incluir el tag exacto `[HUMAN_HANDOFF]` al final del mensaje de texto, en una línea propia.\n\nFrases que ACTIVAN [HUMAN_HANDOFF] (sin importar cómo estén escritas):\n- \"quiero hablar con un humano\"\n- \"quiero hablar con una persona\"\n- \"quiero un asesor\"\n- \"asesor humano\"\n- \"hablar con alguien\"\n- \"con una persona real\"\n- \"representante\"\n- \"opción 5\" / \"5\" cuando el menú principal está activo / \"5️⃣\"\n- cualquier variante de las anteriores\n\nFormato OBLIGATORIO de respuesta cuando se activa handoff:\nClaro, te conecto con un asesor de Reyna. Un momento por favor 🧑‍💼\n[HUMAN_HANDOFF]\n\nREGLA CRÍTICA: El tag `[HUMAN_HANDOFF]` NUNCA debe aparecer sin el mensaje de transición. Siempre escribe primero el texto, luego el tag en línea separada.\n\n### 8. MOSTRAR PROYECTOS POR CATEGORÍA (GALERÍA)\n\n### 9. UBICACIÓN (OPCIÓN 6 — VEN A VISITARNOS)\n\nCuando el usuario seleccione la opción 6 o pregunte por la dirección/ubicación/cómo llegar, responde SIEMPRE con este mensaje exacto:\n\n\"📍 Estamos en *Loma Alta #220, Col. Loma Larga, Monterrey, N.L.* ¡Te esperamos!\n\nhttps://maps.app.goo.gl/Sd2SoKK48GWKehyN7\"\n\nNo agregues más texto ni preguntas. Solo la dirección, la liga y la invitación.\n\n\n\nCuando el cliente seleccione una categoría del menú (opciones 1 a 5) o pida ver fotos/proyectos/galería de algún tipo de mueble, DEBES:\n\n1. Incluir el tag exacto `[GALERIA_<CATEGORIA>]` en una línea propia AL INICIO de tu respuesta, donde `<CATEGORIA>` es UNO de:\n   - `COCINAS`\n   - `CLOSETS`\n   - `BARES`\n2. Después del tag, escribir 1 oración corta de transición + invitación a cotizar.\n\nMapeo de opción del menú a categoría:\n- Opción 1 → `[GALERIA_COCINAS]`\n- Opción 2 → `[GALERIA_CLOSETS]`\n- Opción 3 → `[GALERIA_BARES]`\n- Opción 4 → No es galería (inicia cotización)\n- Opción 5 → No es galería (transfiere a asesor, ver sección 7)\n- Opción 6 → No es galería (envía ubicación, ver sección 9)\n\nFormato OBLIGATORIO:\n[GALERIA_COCINAS]\nAquí te muestro algunos de nuestros proyectos de cocinas. ¿Te gustaría cotizar una para tu hogar? 🪵\n\nREGLAS DE LA GALERÍA:\n- Cada tag `[GALERIA_X]` se emite máximo UNA VEZ por categoría por conversación. Si el cliente vuelve a pedir la misma galería, responde con texto solamente (sin el tag).\n- NO combinar `[GALERIA_X]` con `[HUMAN_HANDOFF]` ni `[LEAD_COMPLETE]` en el mismo mensaje.\n- NUNCA emitas un tag de galería si los números aparecen en otro contexto (presupuesto, años, cantidades).\n- Si tras la galería el cliente responde algo vago u off-topic, NO repitas la pregunta. Vuelve al menú resumido: \"¿Te gustaría ver otra categoría o cotizar tu proyecto? Escribe el número de la opción que prefieras 😊\""
+        }
+      },
+      "id": "ccb58402-4d52-4630-b006-5c6a36ac1d4f",
+      "name": "Asistente REYNA",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -672,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.5
+        }
+      },
+      "id": "f50e66a2-360e-402a-a440-52bb24a37185",
+      "name": "Google Gemini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        160
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "yfmGPBVirCA6i7JY",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Message').item.json.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "id": "17b01835-370e-4771-80c6-bde61f70a02e",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -544,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst HANDOFF_TAG = '[HUMAN_HANDOFF]';\nlet humanHandoff = false;\nif (agentOutput.includes(HANDOFF_TAG)) {\n  humanHandoff = true;\n  cleanMessage = agentOutput.replace(HANDOFF_TAG, '').trim();\n}\n\n// === GALERIA: detectar [GALERIA_<CATEGORIA>] ===\n// Mapa categoria -> imagenes (URLs publicas). Editar aqui cuando lleguen las fotos reales de Reyna.\nconst GALERIA_IMAGES = {\n  COCINAS:    [\n    'https://drive.google.com/thumbnail?id=1HQXQNFg20OlMnXXWObNYxQTp_OGauyr-&sz=w800',\n    'https://drive.google.com/thumbnail?id=1Bv7tlEhpU3r5ZLg2NqtfX5bXVoOdB5lV&sz=w800'\n  ],\n  CLOSETS:    [\n    'https://drive.google.com/thumbnail?id=1hcodzIB8ppOprNHbJ5VlphyGBR5B2Sx3&sz=w800',\n    'https://drive.google.com/thumbnail?id=1w-gKaNQDfvH_Yvk4sJQMLgEhqWBb_E33&sz=w800'\n  ],\n  PLAFONES:   [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Plafon+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Plafon+2'\n  ],\n  PUERTAS:    [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Puerta+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Puerta+2',\n    'https://placehold.co/800x600/CD853F/FFFFFF?text=Puerta+3'\n  ],\n  MUEBLES_TV: [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Mueble+TV+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Mueble+TV+2'\n  ],\n  BARES:      [\n    'https://drive.google.com/thumbnail?id=1MLyprumzWVSNaUAPKsUjkcyj5umm5RtI&sz=w800'\n  ],\n  LAVANETAS:  [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Lavaneta+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Lavaneta+2'\n  ]\n};\nlet galeria = null;\nlet imagenes = [];\nconst galRegex = /\\[GALERIA_([A-Z_]+)\\]/;\nconst galMatch = agentOutput.match(galRegex);\nif (galMatch) {\n  const cat = galMatch[1];\n  if (GALERIA_IMAGES[cat]) {\n    galeria = cat;\n    imagenes = GALERIA_IMAGES[cat];\n  }\n  cleanMessage = cleanMessage.replace(galMatch[0], '').trim();\n  if (cleanMessage.length < 10) {\n    cleanMessage = 'Aquí te comparto algunos de nuestros proyectos. ¿Te gustaría cotizar el tuyo? 🪵';\n  }\n}\nconst sendShowreel = false; // legado, ya no aplica en Reyna\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,24}$/;\nconst emailOK = (e) => typeof e === 'string' && EMAIL_RE.test(e.trim()) && !e.includes('..');\nconst PRESUPUESTO_FALSO = /^(no\\s*(especificado|proporcionado|definido|disponible|tengo|aplica)|n\\/a|na|ninguno|sin\\s*presupuesto|desconocido|por\\s*definir|a\\s*definir|pendiente|\\.\\.\\.)$/i;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2 && !PRESUPUESTO_FALSO.test(p.trim());\nconst proyectoOK = (p) => p && p.trim().length >= 3 && !p.includes('...');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\nconst partial = wf.partialLeads[phoneNumber];\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && emailOK(fromUser.email) && !partial.email) partial.email = fromUser.email;\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst userText = (userMsg || '').trim();\nconst explicitNamePatterns = [/^(?:soy|me llamo|mi nombre es|me dicen)\\s+([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\\s]{1,40})/i];\nlet explicitName = null;\nfor (const re of explicitNamePatterns) {\n  const m = userText.match(re);\n  if (m && m[1]) { explicitName = m[1].trim().split(/\\s+/).slice(0, 3).join(' '); break; }\n}\nconst botAskedName = lastBotMsg.includes('nombre completo') ||\n  (lastBotMsg.includes('nombre') && !lastBotMsg.includes('tel') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userHasEmail = /@/.test(userText);\nconst userHasPhone = /\\d[\\d\\s\\-()]{5,}\\d/.test(userText);\nconst userIsMenuChoice = /^[1-7]\\b/.test(userText);\nconst userHasManyDigits = (userText.match(/\\d/g) || []).length > 4;\nconst PIROPOS = /^(hola|buenas|buenos dias|buenos días|no lo se|no lo sé|no se|no sé|no tengo|si|sí|no|guapa|linda|hermosa|bonita|genial|perfecto|gracias)$/i;\nconst looksLikeRealName = userText.length >= 2 && !userHasEmail && !userHasPhone && !userIsMenuChoice && !userHasManyDigits && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !PIROPOS.test(userText);\nif (explicitName && !partial.nombre) {\n  partial.nombre = explicitName.replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n} else if (botAskedName && looksLikeRealName && !partial.nombre) {\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n}\nconst lastWasProjectAsk = lastBotMsg.includes('tienes en mente') || lastBotMsg.includes('cuéntame') || lastBotMsg.includes('cuentame') || lastBotMsg.includes('cuéntanos') || lastBotMsg.includes('cuentanos');\nif (lastWasProjectAsk && userText.length >= 3 && !partial.proyecto) {\n  partial.proyecto = userText.slice(0, 200);\n}\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try { agentParsed = JSON.parse(agentOutput.slice(start, end).trim()); } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre) && !/@/.test(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && emailOK(agentParsed.email)) partial.email = agentParsed.email.trim();\n  if (agentParsed.proyecto && proyectoOK(agentParsed.proyecto)) partial.proyecto = agentParsed.proyecto.trim().slice(0, 200);\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\nconst tieneBase = partial.nombre && partial.email;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst noSeRegex = /^(no(\\s+lo)?\\s*(se|sé)|no\\s+tengo(\\s+idea)?|na|n\\/a|no\\s+proporcionado|depende|m[áa]s\\s+adelante|todav[íi]a\\s+no|aun\\s+no|a[úu]n\\s+no|luego(\\s+te\\s+digo)?|despu[ée]s|ninguno|sin\\s+presupuesto)\\b.*$/i;\nconst isNoSeAnswer = noSeRegex.test(userLower) || userLower === 'no' || userLower === 'si' || userLower === 'sí';\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\nconst cierreTexto = (nom) => '¡Excelente, ' + (nom || 'gracias') + '! 🪵 Con esto tenemos todo lo necesario para que un asesor de Reyna analice tu proyecto. Te contactaremos muy pronto para conversar a detalle. Gracias por confiar en quienes llevamos 37 años haciendo carpintería fina. ✨';\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto) && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n  if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n} else if (agentParsed && tieneBase && (!presupuestoOK(agentParsed.presupuesto) || !lastWasBudgetAsk)) {\n  if (lastWasBudgetAsk) {\n    leadComplete = true;\n    leadData = { ...partial, presupuesto: 'No proporcionado' };\n    if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n  } else {\n    partial.leadCompleteEmitted = false;\n    cleanMessage = '¡Perfecto, ya tenemos tu nombre y email! Solo una pregunta más: ¿cuentas con un presupuesto aproximado para tu proyecto? (Puedes decir \"no sé\" si aún no lo defines) 💰';\n  }\n} else if (tieneBase && lastWasBudgetAsk) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n} else if (partial.leadCompleteEmitted && tieneBase && userLower.length > 0) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n}\nif (leadData && !leadData.proyecto) leadData.proyecto = partial.proyecto || '';\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\nif (leadComplete) delete wf.partialLeads[phoneNumber];\nconst soloUser = wf.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = new Date().toISOString();\nconst procLookup = $('Process Lookup').item.json;\nconst estadoActual = procLookup?.Estado || '';\nconst yaCalificado = estadoActual === 'Calificado';\nif (yaCalificado) { leadComplete = false; leadData = null; }\nconst upsertParcial = (leadComplete || yaCalificado) ? null : {\n  'Teléfono': phoneNumber,\n  'Estado': yaCalificado ? 'Calificado' : 'Nuevo',\n  'Última Interacción': fechaCorta,\n  'Transcripción': transcripcion,\n  ...(partial.nombre      && { 'Nombre': partial.nombre }),\n  ...(partial.email       && { 'Email': partial.email }),\n  ...(partial.proyecto    && { 'Proyecto': partial.proyecto }),\n  ...(partial.presupuesto && { 'Presupuesto': partial.presupuesto }),\n};\nreturn [{ json: { phoneNumber, cleanMessage, leadComplete, leadData, transcripcion, fechaCorta, fechaTimestamp, upsertParcial, humanHandoff, sendShowreel, galeria, imagenes, senderName: $('Extract Message').item.json.senderName } }];\n"
+      },
+      "id": "c952c271-5b4c-4378-9e82-907758ded443",
+      "name": "Detect Lead Complete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "lead-complete-check",
+              "leftValue": "={{ $json.leadComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3be55a7a-1637-4b26-a2be-233628444d55",
+      "name": "�Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'Teléfono': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Proyecto': leadData.proyecto || '',\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Última Interacción': fechaCorta,\n      'Transcripción': transcripcion,\n      'Timestamp': fechaTimestamp || fechaCorta.replace(/\\s+/g, '-')\n    }\n  }\n}];"
+      },
+      "id": "70c2fd5b-377a-4095-a860-1072bfe08b90",
+      "name": "Cliente Interesado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001783326,
+          "mode": "list",
+          "cachedResultName": "Reyna - Base de datos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/edit#gid=1001783326"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Teléfono": "={{ $json.upsertCalificado['Teléfono'] }}",
+            "Nombre": "={{ $json.upsertCalificado.Nombre }}",
+            "Email": "={{ $json.upsertCalificado.Email }}",
+            "Presupuesto": "={{ $json.upsertCalificado.Presupuesto }}",
+            "Estado": "={{ $json.upsertCalificado.Estado }}",
+            "Última Interacción": "={{ $json.upsertCalificado['Última Interacción'] }}",
+            "Transcripción": "={{ $json.upsertCalificado['Transcripción'] }}",
+            "Timestamp": "={{ $json.upsertCalificado.Timestamp }}",
+            "Proyecto": "={{ $json.upsertCalificado.Proyecto }}"
+          },
+          "matchingColumns": [
+            "Teléfono"
+          ],
+          "schema": [
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Proyecto",
+              "displayName": "Proyecto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Última Interacción",
+              "displayName": "Última Interacción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transcripción",
+              "displayName": "Transcripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "96914695-f8e3-413f-8bff-d567a3440126",
+      "name": "Sheets - Momento 2 (Calificado)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1248,
+        -160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "luis.sanchezag@gmail.com",
+        "subject": "=🪵 Lead Reyna - {{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}",
+        "message": "=<h2>Nuevo Prospecto Calificado — Reyna Cocinas y Carpinterías Finas</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Email }}</td></tr>\n<tr><td><b>WhatsApp</b></td><td>{{ $('Extract Message').item.json.phoneNumber }}</td></tr>\n<tr><td><b>Proyecto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Proyecto || 'No especificado' }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Presupuesto || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado['Transcripción'] }}</td></tr>\n</table>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "701f975d-4113-40fa-bf12-344818bd1184",
+      "name": "Email a Ventas",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        -160
+      ],
+      "webhookId": "c0b3b97a-c9d2-49f1-a0c1-1fe720b07925",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mvHtMYJY0cNMkReF",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Detect Lead Complete').item.json.phoneNumber }}",
+        "textBody": "={{ $('Detect Lead Complete').item.json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "496800e9-a1a4-4350-b2b0-705ef5907b9c",
+      "name": "Responder WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1696,
+        -96
+      ],
+      "webhookId": "e56488f3-ed09-4886-9a77-27ae40514379",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/values/A:I",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {}
+      },
+      "id": "c5811a38-3d9b-4e3a-97d3-c489fa2feada",
+      "name": "Lookup Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2016,
+        -96
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": false,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "is-calificado",
+              "leftValue": "={{ $json['Estado'] }}",
+              "rightValue": "Calificado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "not-reset",
+              "leftValue": "={{ $('Extract Message').item.json.isReset }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e38b6551-521f-44f4-807d-7d8d702367fc",
+      "name": "�Ya Calificado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1568,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json;\nconst phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMessage = $('Extract Message').item.json.chatInput;\nconst sessionId = $('Extract Message').item.json.sessionId;\nconst nombre = lead.Nombre || 'cliente';\n\nconst chatInput = `[CONTEXTO INTERNO: Este cliente (${nombre}) YA ESTÁ REGISTRADO como Calificado. NO le pidas nombre, email ni datos. Salúdalo por su nombre, recuérdale que ya lo tienes registrado y que el equipo de ventas se pondrá en contacto. Responde sus preguntas/dudas. Si el cliente pide hablar con ventas o cotizar, NO inicies calificación — simplemente confirma que el equipo lo contactará. Si insiste en registrarse de nuevo, sugiérele escribir /reset.]\\n\\nMensaje del cliente: ${userMessage}`;\n\nreturn [{ json: { phoneNumber, chatInput, sessionId, isCalificado: true } }];"
+      },
+      "id": "25b08a39-b58f-4b29-a17c-e3cc53e5ffcc",
+      "name": "Cliente Ya Existente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst response = $input.first().json;\nconst rows = response?.values || [];\nif (rows.length === 0) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst headers = rows[0];\nconst idIdx = headers.indexOf('Teléfono');\nconst estadoIdx = headers.indexOf('Estado');\nconst nombreIdx = headers.indexOf('Nombre');\nif (idIdx === -1) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst norm = (p) => String(p || '').replace(/\\D/g, '');\nlet found = null;\nfor (let i = 1; i < rows.length; i++) {\n  if (norm(rows[i][idIdx]) === norm(phoneNumber)) {\n    found = rows[i];\n    break;\n  }\n}\nif (!found) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nreturn [{ json: {\n  found: true,\n  Estado: found[estadoIdx] || '',\n  Nombre: found[nombreIdx] || '',\n  phoneNumber\n} }];"
+      },
+      "id": "ca7f3f18-1bdb-47e2-ba3f-6b34a0385e90",
+      "name": "Process Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1792,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": false,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "is-found-check",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "518ab663-1168-4ee6-bc25-67c545846d18",
+      "name": "�Existe en Sheet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1344,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.upsertParcial }}",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "¿Guardar Parcial?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001783326,
+          "mode": "list",
+          "cachedResultName": "Reyna - Base de datos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/edit#gid=1001783326"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Teléfono": "={{ $json.upsertParcial['Teléfono'] }}",
+            "Nombre": "={{ $json.upsertParcial.Nombre }}",
+            "Email": "={{ $json.upsertParcial.Email }}",
+            "Proyecto": "={{ $json.upsertParcial.Proyecto }}",
+            "Presupuesto": "={{ $json.upsertParcial.Presupuesto }}",
+            "Estado": "={{ $json.upsertParcial.Estado }}",
+            "Última Interacción": "={{ $json.upsertParcial['Última Interacción'] }}",
+            "Transcripción": "={{ $json.upsertParcial['Transcripción'] }}",
+            "Timestamp": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "Teléfono"
+          ],
+          "schema": [
+            {
+              "id": "Teléfono",
+              "displayName": "Teléfono",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Proyecto",
+              "displayName": "Proyecto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Última Interacción",
+              "displayName": "Última Interacción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transcripción",
+              "displayName": "Transcripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {},
+        "continueOnFail": true
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Sheets - Parcial",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        576,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const { phoneNumber } = $input.first().json;\nconst wf = $getWorkflowStaticData('global');\nif (!wf.humanMode) wf.humanMode = {};\nconst isPaused = wf.humanMode[phoneNumber] === true;\nreturn [{ json: { ...$input.first().json, isPaused } }];"
+      },
+      "id": "df036352-3af9-42b1-956d-16e022e62488",
+      "name": "Check Pausa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2464,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-paused-check",
+              "leftValue": "={{ $json.isPaused }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6be20b28-063d-4cbc-8580-c9e072309f5b",
+      "name": "¿En Pausa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2240,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $json.phoneNumber }}",
+        "textBody": "⏳ Tu conversación está siendo atendida por un agente de Reyna. Te responderemos muy pronto. Si fue un error, escribe /volver para regresar al bot.",
+        "additionalFields": {}
+      },
+      "id": "9a35d7e2-8d1e-47b1-863f-93b5e5f0a67d",
+      "name": "Responder En Atención",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2016,
+        112
+      ],
+      "webhookId": "146e8dae-2866-4d78-a378-9bb9613ed72c",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "handoff-check",
+              "leftValue": "={{ $json.humanHandoff }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f3aba0f0-da62-44e2-8406-fc80ed44f25c",
+      "name": "¿Handoff?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { phoneNumber, senderName, cleanMessage, fechaCorta } = $input.first().json;\nconst wf = $getWorkflowStaticData('global');\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\nwf.humanMode[phoneNumber] = true;\nwf.humanModeAt[phoneNumber] = Date.now();\n\nconst history = (wf.history && wf.history[phoneNumber]) || [];\nconst historyText = history.length > 0 ? history.slice(-10).join('\\n') : '(sin historial)';\nconst phoneFormatted = phoneNumber.startsWith('+') ? phoneNumber : '+' + phoneNumber;\n\nconst contextMessage = `--- Contexto WhatsApp ---\\nNúmero: ${phoneNumber}\\nNombre: ${senderName || 'Desconocido'}\\nFecha: ${fechaCorta}\\n\\nHistorial:\\n${historyText}\\n\\n⚠ El cliente solicitó hablar con un agente humano.`;\n\nreturn [{ json: {\n  phoneNumber,\n  phoneFormatted,\n  senderName: senderName || 'Cliente WhatsApp',\n  cleanMessage,\n  contextMessage,\n  fechaCorta\n} }];"
+      },
+      "id": "909c16f9-6537-497e-b1eb-634bdb741135",
+      "name": "Prep Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.est-studio.co/api/v1/accounts/1/contacts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $json.senderName }}\",\n  \"phone_number\": \"{{ $json.phoneFormatted }}\"\n}",
+        "options": {}
+      },
+      "id": "baf52aef-f755-46ca-a920-2a6e8ccd4028",
+      "name": "Chatwoot - Crear Contacto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        -352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "s0oVDjlqYuWtXpk0",
+          "name": "Chatwoot API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.est-studio.co/api/v1/accounts/1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inbox_id\": 1,\n  \"contact_id\": {{ $('Chatwoot - Buscar Contacto').item.json.payload[0].id }}\n}",
+        "options": {}
+      },
+      "id": "0a83f9c9-b87a-4bda-be2e-e4746dd665b5",
+      "name": "Chatwoot - Crear Conversación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1024,
+        -352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "s0oVDjlqYuWtXpk0",
+          "name": "Chatwoot API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.est-studio.co/api/v1/accounts/1/conversations/{{ $('Chatwoot - Crear Conversación').item.json.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": {{ JSON.stringify($('Prep Handoff').item.json.contextMessage) }},\n  \"message_type\": \"outgoing\",\n  \"private\": true\n}",
+        "options": {}
+      },
+      "id": "69c5d54e-f3b2-432e-abf9-be808f4e2817",
+      "name": "Chatwoot - Enviar Historial",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1248,
+        -352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "s0oVDjlqYuWtXpk0",
+          "name": "Chatwoot API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Prep Handoff').item.json.phoneFormatted.replace('+', '') }}",
+        "textBody": "={{ $('Prep Handoff').item.json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "736a563f-b850-42e3-b0d7-2e80559abbeb",
+      "name": "Responder WA Handoff",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        -352
+      ],
+      "webhookId": "67fc1a6e-e87d-4b03-a391-657f3d3c064c",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://chatwoot.est-studio.co/api/v1/accounts/1/contacts/search?q={{ $('Prep Handoff').item.json.phoneFormatted }}&include_contacts=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "a9b3c4d5-0001-0001-0001-chatwoot00001",
+      "name": "Chatwoot - Buscar Contacto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "s0oVDjlqYuWtXpk0",
+          "name": "Chatwoot API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bot-resume",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "resume-webhook-001",
+      "name": "Webhook Resume",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2912,
+        336
+      ],
+      "webhookId": "c92bcfbb-d9bb-499a-b12c-d32b23d7d69d"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawPhone = $input.first().json.phoneNumber || $input.first().json.body?.phoneNumber || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (phoneNumber) {\n  wf.resetEpochs[phoneNumber] = Date.now();\n  if (wf.humanMode) delete wf.humanMode[phoneNumber];\n  if (wf.humanModeAt) delete wf.humanModeAt[phoneNumber];\n}\nreturn [{ json: { ok: true, phoneNumber } }];"
+      },
+      "id": "resume-code-001",
+      "name": "Limpiar humanMode",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "resume-respond-001",
+      "name": "Respond Resume OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -2464,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "galeria-check",
+              "leftValue": "={{ $json.galeria }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "showreel-if-001",
+      "name": "¿Galería?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -96,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "messageType": "image",
+        "mediaLink": "={{ $json.url }}",
+        "additionalFields": {}
+      },
+      "id": "showreel-video-001",
+      "name": "Enviar Imagen Galería",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        112
+      ],
+      "webhookId": "9716cd9d-c4cc-4fe3-961a-25319af33928",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "textBody": "={{ $('Detect Lead Complete').item.json.cleanMessage }}",
+        "additionalFields": {}
+      },
+      "id": "showreel-text-001",
+      "name": "Responder WA Texto Galería",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        112
+      ],
+      "webhookId": "04022a8e-8e44-4374-9043-6afbc95081da",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "id": "galeria-split-001",
+      "name": "Split Imágenes Galería",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        112
+      ],
+      "parameters": {
+        "jsCode": "const imgs = $('Detect Lead Complete').item.json.imagenes || [];\nreturn imgs.map(url => ({ json: { url } }));"
+      }
+    },
+    {
+      "id": "consolidar-cta-001",
+      "name": "Consolidar CTA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        112
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const phoneNumber = $('Extract Message').first().json.phoneNumber;\nreturn [{ json: { phoneNumber } }];"
+      }
+    },
+    {
+      "id": "cta-cotizar-001",
+      "name": "CTA Cotizar",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        112
+      ],
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $json.phoneNumber }}",
+        "textBody": "¿Te gustaría cotizar un proyecto así para tu hogar? ¡Cuéntanos más! ✍️ Escribe *4* y con gusto te ayudamos. 🪵",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente Nuevo": {
+      "main": [
+        [
+          {
+            "node": "Sheets - Momento 1 (Nuevo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets - Momento 1 (Nuevo)": {
+      "main": [
+        [
+          {
+            "node": "Asistente REYNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente REYNA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente REYNA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "�Lead?": {
+      "main": [
+        [
+          {
+            "node": "Cliente Interesado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente Interesado": {
+      "main": [
+        [
+          {
+            "node": "Sheets - Momento 2 (Calificado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets - Momento 2 (Calificado)": {
+      "main": [
+        [
+          {
+            "node": "Email a Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email a Ventas": {
+      "main": [
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead": {
+      "main": [
+        [
+          {
+            "node": "Process Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "�Ya Calificado?": {
+      "main": [
+        [
+          {
+            "node": "Cliente Ya Existente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "�Existe en Sheet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Lookup": {
+      "main": [
+        [
+          {
+            "node": "�Ya Calificado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "�Existe en Sheet?": {
+      "main": [
+        [
+          {
+            "node": "Asistente REYNA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cliente Nuevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Guardar Parcial?": {
+      "main": [
+        [
+          {
+            "node": "Sheets - Parcial",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "�Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets - Parcial": {
+      "main": [
+        [
+          {
+            "node": "�Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente Ya Existente": {
+      "main": [
+        [
+          {
+            "node": "Asistente REYNA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "Check Pausa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Pausa": {
+      "main": [
+        [
+          {
+            "node": "¿En Pausa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿En Pausa?": {
+      "main": [
+        [
+          {
+            "node": "Responder En Atención",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Handoff?": {
+      "main": [
+        [
+          {
+            "node": "Prep Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Guardar Parcial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Handoff": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot - Crear Contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot - Crear Conversación": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot - Enviar Historial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot - Enviar Historial": {
+      "main": [
+        [
+          {
+            "node": "Responder WA Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot - Crear Contacto": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot - Buscar Contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot - Buscar Contacto": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot - Crear Conversación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Resume": {
+      "main": [
+        [
+          {
+            "node": "Limpiar humanMode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar humanMode": {
+      "main": [
+        [
+          {
+            "node": "Respond Resume OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Lead Complete": {
+      "main": [
+        [
+          {
+            "node": "¿Galería?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente REYNA": {
+      "main": [
+        [
+          {
+            "node": "Detect Lead Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Galería?": {
+      "main": [
+        [
+          {
+            "node": "Responder WA Texto Galería",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder WA Texto Galería": {
+      "main": [
+        [
+          {
+            "node": "Split Imágenes Galería",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Imágenes Galería": {
+      "main": [
+        [
+          {
+            "node": "Enviar Imagen Galería",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Imagen Galería": {
+      "main": [
+        [
+          {
+            "node": "Consolidar CTA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar CTA": {
+      "main": [
+        [
+          {
+            "node": "CTA Cotizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "global": {
+      "resetEpochs": {
+        "5218112817608": 1777846949774
+      },
+      "humanMode": {},
+      "humanModeAt": {},
+      "history": {
+        "5218112817608": [
+          "U: Hola",
+          "B: ¡Hola! 👋 Soy el asistente virtual de Reyna, carpintería fina con 37 años creando piezas a medida en Monterrey. ¿Qué te gustaría conocer hoy? 1️⃣ Cocinas 2️⃣ Closets y Vestidores 3️⃣ Bares 4️⃣ Cotizar mi proyecto 5️⃣ Hablar con un asesor 6️⃣ Ven a visitarnos",
+          "U: 6",
+          "B: 📍 Estamos en *Loma Alta #220, Col. Loma Larga, Monterrey, N.L.* ¡Te esperamos! https://maps.app.goo.gl/Sd2SoKK48GWKehyN7"
+        ]
+      },
+      "partialLeads": {
+        "5218112817608": {}
+      }
+    }
+  },
+  "pinData": {},
+  "meta": null,
+  "tags": [
+    {
+      "updatedAt": "2026-05-03T17:49:38.076Z",
+      "createdAt": "2026-05-03T17:49:38.076Z",
+      "id": "a12wMHATcN8PKbrb",
+      "name": "REYNA"
+    }
+  ],
+  "active": true
+}

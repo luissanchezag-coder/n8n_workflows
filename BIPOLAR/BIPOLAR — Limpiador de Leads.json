@@ -1,0 +1,86 @@
+{
+  "name": "BIPOLAR — Limpiador de Leads",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {"interval": [{"field": "minutes", "minutesInterval": 30}]}
+      },
+      "id": "bbfbe35c-692a-4cdf-9797-ca08119d5a71",
+      "name": "Cron cada 30 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://sheets.googleapis.com/v4/spreadsheets/1KKO788raDT6UnA4ZHGODEx2cbCO7w5PSYqmI9c4j_XQ/values/A:I",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {}
+      },
+      "id": "907876b1-db58-490c-aa03-8230e909ca24",
+      "name": "Leer Lead Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [224, 0],
+      "alwaysOutputData": true,
+      "credentials": {"googleSheetsOAuth2Api": {"id": "F5ulUZ2Ax6X8HpPv", "name": "Google Sheets account 2"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst rows = response?.values || [];\nif (rows.length < 2) return [];\n\nconst headers = rows[0];\nconst idIdx = headers.indexOf('Teléfono');\nif (idIdx === -1) return [];\nconst estadoIdx = headers.indexOf('Estado');\nconst tsIdx = headers.indexOf('Timestamp');\nconst nombreIdx = headers.indexOf('Nombre');\n\nconst OCHO_HORAS_MS = 8 * 60 * 60 * 1000;\nconst now = Date.now();\nconst fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/\\./g, '');\n\nconst candidatos = [];\nfor (let i = 1; i < rows.length; i++) {\n  const row = rows[i];\n  const estado = String(row[estadoIdx] || '').trim();\n  const tsStr = String(row[tsIdx] || '').trim();\n  if (estado !== 'Nuevo') continue;\n  if (!tsStr) continue;\n  const ts = Date.parse(tsStr);\n  if (isNaN(ts)) continue;\n  if ((now - ts) < OCHO_HORAS_MS) continue;\n\n  candidatos.push({\n    json: {\n      phoneNumber: row[idIdx] || '',\n      nombre: row[nombreIdx] || '',\n      horasInactivo: Math.round((now - ts) / 3600000),\n      upsertAbandonado: {\n        'Teléfono': row[idIdx] || '',\n        'Estado': 'No completó información',\n        'Ultima Interaccion': fechaCorta,\n        'Timestamp': new Date().toISOString()\n      }\n    }\n  });\n}\n\nreturn candidatos;"
+      },
+      "id": "a0949496-2ce0-44e9-9c11-e956d21c45c8",
+      "name": "Detectar Abandonados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 0]
+    },
+    {
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Teléfono": "={{ $json.upsertAbandonado['Teléfono'] }}",
+            "Estado": "={{ $json.upsertAbandonado.Estado }}",
+            "Última Interacción": "={{ $json.upsertAbandonado['Ultima Interaccion'] }}",
+            "Timestamp": "={{ $json.upsertAbandonado.Timestamp }}",
+            "Nombre": "={{ $json.nombre }}"
+          },
+          "matchingColumns": ["Teléfono"],
+          "schema": [
+            {"id": "Teléfono", "displayName": "Teléfono", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "Nombre", "displayName": "Nombre", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "Email", "displayName": "Email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "Proyecto", "displayName": "Proyecto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "Presupuesto", "displayName": "Presupuesto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "Estado", "displayName": "Estado", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "Última Interacción", "displayName": "Última Interacción", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
+            {"id": "Transcripción", "displayName": "Transcripción", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "Timestamp", "displayName": "Timestamp", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true}
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "6e342242-17d0-48f4-9e64-cfe75d0b3497",
+      "name": "Marcar No Completó",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [672, 0],
+      "credentials": {"googleSheetsOAuth2Api": {"id": "F5ulUZ2Ax6X8HpPv", "name": "Google Sheets account 2"}}
+    }
+  ],
+  "connections": {
+    "Cron cada 30 min": {"main": [[{"node": "Leer Lead Log", "type": "main", "index": 0}]]},
+    "Leer Lead Log": {"main": [[{"node": "Detectar Abandonados", "type": "main", "index": 0}]]},
+    "Detectar Abandonados": {"main": [[{"node": "Marcar No Completó", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1", "binaryMode": "separate", "availableInMCP": false, "callerPolicy": "workflowsFromSameOwner"},
+  "staticData": {"node:Cron cada 30 min": {"recurrenceRules": [12]}},
+  "meta": null,
+  "pinData": {},
+  "tags": [{"name": "BIPOLAR"}]
+}
