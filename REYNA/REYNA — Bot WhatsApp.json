@@ -8,13 +8,13 @@
         ],
         "options": {}
       },
-      "id": "301dad60-6a28-4155-a358-5b1d56d0700a",
+      "id": "1a304906-b9dd-48d8-ad0c-4484aa47c1c9",
       "name": "WhatsApp Trigger",
       "type": "n8n-nodes-base.whatsAppTrigger",
       "typeVersion": 1,
       "position": [
-        -2912,
-        16
+        -6576,
+        432
       ],
       "webhookId": "f44c7df3-6112-45a7-8986-c438b3849e3d",
       "credentials": {
@@ -26,28 +26,28 @@
     },
     {
       "parameters": {
-        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message || message.type !== 'text') return [];\nconst rawPhone = message.from || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst senderName = contact?.profile?.name || 'Cliente';\nconst text = message.text?.body || '[Multimedia]';\n\nconst isReset = text.trim().toLowerCase() === '/reset';\nconst isResume = text.trim().toLowerCase() === '/resume';\nconst isVolver = text.trim().toLowerCase() === '/volver';\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\n\nconst TTL_RESET_MS = 30 * 24 * 60 * 60 * 1000;\nconst TTL_HUMAN_MS = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [phone, ts] of Object.entries(wf.resetEpochs)) {\n  if (now - ts > TTL_RESET_MS) delete wf.resetEpochs[phone];\n}\nfor (const [phone, ts] of Object.entries(wf.humanModeAt)) {\n  if (now - ts > TTL_HUMAN_MS) {\n    delete wf.humanMode[phone];\n    delete wf.humanModeAt[phone];\n  }\n}\n\nif (isReset) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isResume) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isVolver) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\n\nconst epoch = wf.resetEpochs[phoneNumber] || 0;\nconst sessionId = epoch ? phoneNumber + '-' + epoch : phoneNumber;\nconst chatInput = (isReset || isVolver || isResume) ? 'Hola' : text;\n\nreturn [{ json: { phoneNumber, senderName, chatInput, sessionId, isReset, isResume } }];"
+        "jsCode": "const payload = $input.first().json;\nconst message = payload.messages?.[0];\nconst contact = payload.contacts?.[0];\nif (!message || message.type !== 'text') return [];\nconst rawPhone = message.from || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst senderName = contact?.profile?.name || 'Cliente';\nconst text = message.text?.body || '[Multimedia]';\n\nconst isReset = text.trim().toLowerCase() === '/reset';\nconst isResume = text.trim().toLowerCase() === '/resume';\nconst isVolver = text.trim().toLowerCase() === '/volver';\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\nif (!wf.inDesignerMode) wf.inDesignerMode = {};\nif (!wf.inDesignerModeAt) wf.inDesignerModeAt = {};\nif (!wf.renderData) wf.renderData = {};\nif (!wf.history) wf.history = {};\n\nconst TTL_RESET_MS = 30 * 24 * 60 * 60 * 1000;\nconst TTL_HUMAN_MS = 7 * 24 * 60 * 60 * 1000;\nconst now = Date.now();\nfor (const [phone, ts] of Object.entries(wf.resetEpochs)) {\n  if (now - ts > TTL_RESET_MS) delete wf.resetEpochs[phone];\n}\nfor (const [phone, ts] of Object.entries(wf.humanModeAt)) {\n  if (now - ts > TTL_HUMAN_MS) {\n    delete wf.humanMode[phone];\n    delete wf.humanModeAt[phone];\n  }\n}\n\nif (isReset) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n  delete wf.inDesignerMode[phoneNumber];\n  delete wf.inDesignerModeAt[phoneNumber];\n  delete wf.renderData[phoneNumber];\n  delete wf.history[phoneNumber];\n}\nif (isResume) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n}\nif (isVolver) {\n  wf.resetEpochs[phoneNumber] = now;\n  delete wf.humanMode[phoneNumber];\n  delete wf.humanModeAt[phoneNumber];\n  delete wf.inDesignerMode[phoneNumber];\n  delete wf.inDesignerModeAt[phoneNumber];\n}\n\nconst epoch = wf.resetEpochs[phoneNumber] || 0;\nconst sessionId = epoch ? phoneNumber + '-' + epoch : phoneNumber;\nconst chatInput = (isReset || isVolver || isResume) ? 'Hola' : text;\n\nreturn [{ json: { phoneNumber, senderName, chatInput, sessionId, isReset, isResume } }];"
       },
-      "id": "ff274425-ffdb-4e22-831c-289384a5290a",
+      "id": "6c5bba9a-fd29-4a0e-89d2-972a4e0f63c6",
       "name": "Extract Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2688,
-        16
+        -6352,
+        432
       ]
     },
     {
       "parameters": {
         "jsCode": "const fechaCorta = new Date().toLocaleString('es-MX', {\n  timeZone: 'America/Monterrey',\n  day: '2-digit', month: 'short', year: 'numeric'\n}).replace(/\\./g, '');\nconst fechaTimestamp = new Date().toISOString();\nconst { phoneNumber, chatInput } = $input.first().json;\nreturn [{\n  json: {\n    phoneNumber,\n    chatInput,\n    upsertNuevo: {\n      'Teléfono': phoneNumber,\n      'Nombre': '',\n      'Email': '',\n      'Proyecto': '',\n      'Presupuesto': '',\n      'Estado': 'Nuevo',\n      'Última Interacción': fechaCorta,\n      'Transcripción': '',\n      'Timestamp': fechaTimestamp\n    }\n  }\n}];"
       },
-      "id": "825da5f1-d560-4ab9-9564-64705b82df8c",
+      "id": "3b6cf803-d191-4d11-9d8d-51cf468cfa2a",
       "name": "Cliente Nuevo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1120,
-        -64
+        -4784,
+        352
       ]
     },
     {
@@ -178,13 +178,13 @@
         },
         "options": {}
       },
-      "id": "8e40a124-dfc9-41ec-b62f-91b52686aac2",
+      "id": "86297709-87ed-48d5-a778-b7e3a7efb873",
       "name": "Sheets - Momento 1 (Nuevo)",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        -896,
-        -64
+        -4560,
+        352
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -198,16 +198,16 @@
         "promptType": "define",
         "text": "={{ $('Extract Message').item.json.chatInput }}",
         "options": {
-          "systemMessage": "### 1. IDENTIDAD Y ROL\nEres el Asistente Virtual de Reyna Cocinas y Carpinterías Finas (https://www.dreina.com/), una empresa con 37 años fabricando muebles a medida en Monterrey.\n- Tono: Profesional, cálido y orientado al oficio. Transmite calidad, experiencia y confianza. Usa emojis con mucha moderación (🪵, ✨, 🏠).\n- Nunca te describas como una \"agencia creativa\". Reyna es carpintería fina y muebles a medida.\n\n### 2. PROTOCOLO DE SALUDO (MANDATORIO)\n⚠️ EXCEPCIÓN CRÍTICA: Si el chatInput comienza con \"[CONTEXTO INTERNO:\" y contiene \"YA ESTÁ REGISTRADO\", NO uses el menú. Saluda al cliente por su nombre, recuérdale que ya está registrado y que un asesor se pondrá en contacto pronto, y responde su mensaje de forma directa. NO repitas el menú.\n\nAnte cualquier saludo o primer contacto (sin \"[CONTEXTO INTERNO:\"), DEBES responder con este formato de menú:\n\"¡Hola! 👋 Soy el asistente virtual de Reyna, carpintería fina con 37 años creando piezas a medida en Monterrey. ¿Qué te gustaría conocer hoy?\n\n1️⃣ Cocinas\n2️⃣ Closets y Vestidores\n3️⃣ Bares\n4️⃣ Cotizar mi proyecto\n5️⃣ Hablar con un asesor\n6️⃣ Ven a visitarnos\"\n\n### 3. REGLAS DE CONTROL Y SEGURIDAD\n- `/reset` (solo pruebas): reinicia la conversación del usuario. Si un cliente lo escribe, ignóralo con naturalidad sin mencionarlo.\n- CONCISIÓN: Respuestas de 2 a 4 oraciones (excepto en el Menú o Cierre de Lead).\n- REGLA DE DOMINIO: Solo respondes sobre Reyna (carpintería, muebles a medida, productos, ubicación, horario, contacto).\n- SISTEMA DE STRIKES: Si el usuario pregunta algo ajeno (clima, política, etc.), advierte que solo hablas de Reyna. Si lo hace por 3ra vez, finaliza la charla: \"Agradezco tu interés, pero por ahora solo atiendo consultas de Reyna. ¡Quedamos a la orden!\"\n- RECUPERACIÓN: Si ves mensajes cortados o errores técnicos en el historial, ignóralos y retoma la charla con naturalidad.\n\n### 4. CALIFICACIÓN DE LEADS (UN DATO POR TURNO)\nCuando el usuario quiera cotizar (opción 4, \"cotizar\", \"presupuesto\", \"precio\", \"quiero cotizar mi proyecto\") O después de mostrar una galería y el cliente exprese interés, calificalo pidiendo UN dato a la vez en este orden ESTRICTO.\n\n⚠️ INFERIR TIPO DE PROYECTO DESDE EL CONTEXTO:\n- Si en la conversación el cliente YA seleccionó una categoría del menú (ej. opción 1 = Cocina, opción 2 = Closet, etc.) o ya mencionó el tipo de mueble que quiere, ESE es el tipo de proyecto. NO vuelvas a preguntarlo, salta al paso 1B.\n- Si el cliente entró directo a \"cotizar\" sin haber elegido categoría, comienza por el paso 1A.\n\n**1A. TIPO DE PROYECTO (solo si NO se infirió del contexto)** → Pregunta: \"Con gusto te ayudo. ¿Qué te gustaría cotizar? Puedes elegir: cocina, closet/vestidor, bar/área social, u otro.\"\n   - Acepta cualquier respuesta razonable. Normaliza internamente al tipo más cercano (ej. \"una alacena\" → \"cocina\"; \"un vestidor\" → \"closet/vestidor\").\n\n**1B. DESCRIPCIÓN DEL PROYECTO** → Pregunta: \"Perfecto. Cuéntame brevemente sobre tu proyecto de {tipo}: ¿qué tienes en mente? (medidas aproximadas, estilo, materiales, o cualquier detalle que tengas)\"\n   - Acepta cualquier respuesta con al menos 5 caracteres. Si dice \"no sé aún\" o vago, continúa igual.\n\n**2. NOMBRE** → Pregunta: \"Gracias. Para registrarte y que un asesor te contacte, ¿me compartes tu nombre completo?\"\n   - ⚠️ VALIDACIÓN NOMBRE: Si la respuesta contiene '@', tiene más de 4 dígitos seguidos, o es claramente un piropo/saludo (\"guapa\", \"linda\", \"hola\", \"qué tal\", \"hermosa\", etc.) → NO aceptarlo. Responde: \"Necesito tu nombre real para registrarte 🙂 ¿Me compartes tu nombre completo?\" y vuelve a esperar.\n\n**3. EMAIL** → Pregunta: \"Gracias, {nombre}. ¿Cuál es tu email?\"\n   - ⚠️ VALIDACIÓN EMAIL: Si la respuesta NO contiene '@' seguido de un dominio con punto (ej. nombre@dominio.com), O si el dominio tiene puntos consecutivos (ej. gmail..com, gmail...com), O si no tiene TLD al final → NO aceptarla. Responde: \"Ese no parece un email válido. Por favor compárteme tu correo electrónico (ej: nombre@dominio.com) 📧\" y vuelve a esperar.\n\n**4. PRESUPUESTO** → Pregunta: \"Última pregunta: ¿cuentas con un presupuesto aproximado para tu proyecto? (puedes decir 'no sé' si aún no lo defines) 💰\"\n   - Acepta CUALQUIER respuesta del usuario, incluyendo 'no sé', 'no tengo', números, rangos, etc. NO re-preguntes el presupuesto.\n\n**Formato del campo `proyecto` para el cierre:** combina tipo + descripción como \"[TIPO] - descripción\". Ej: \"Cocina - quiero algo moderno tipo isla, aprox 4m, en madera oscura\".\n\n*Nota: Revisa el historial; si el usuario ya mencionó alguno de estos datos de forma natural, no lo vuelvas a pedir y pasa al siguiente.*\n\n### 5. CIERRE TÉCNICO DE LEAD (OBLIGATORIO)\n⚠️ REGLA CRÍTICA: NUNCA emitas [LEAD_COMPLETE] sin haber preguntado explícitamente el PRESUPUESTO en un turno separado y haber recibido respuesta, aunque el usuario haya dado todos los demás datos de un golpe.\n\n⚠️ DATO AUTOMÁTICO — TELÉFONO: El teléfono del cliente YA está disponible desde el sistema (es el número de WhatsApp desde el que escribe). NUNCA lo preguntes. Se incluirá automáticamente en el cierre.\n\nAl confirmar los 4 datos (tipo+descripción del proyecto, nombre, email, presupuesto), responde con este cierre y el bloque de datos final:\n\n\"¡Excelente! Con esto tenemos todo lo necesario para que un asesor de Reyna analice tu proyecto. 🪵 Te contactaremos muy pronto para conversar a detalle. Gracias por confiar en quienes llevamos 37 años haciendo carpintería fina. ✨\"\n\n[LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"telefono\":\"...\",\"proyecto\":\"[TIPO] - descripción\",\"presupuesto\":\"...\"}[/LEAD_COMPLETE]\n\n### 6. CONOCIMIENTO (CATÁLOGO Y EMPRESA)\n\n**Categorías y materiales:**\n- **Cocinas:** estilo clásico o contemporáneo, en madera, melamina y herrajes de calidad. Variantes: moderna de melamina, con isla, americana, clásica con jaladeras. https://www.dreina.com/cocinas\n- **Closets y Vestidores:** soluciones a medida con cajones organizados y herrajes durables.\n- **Plafones:** paneles enchapados o madera sólida. Aportan calidez y enmarcan espacios. Diseño clásico o contemporáneo. https://www.dreina.com/plafones\n- **Puertas:** maderas Nogal, Encino y Okume. Acabados enchapados con diseños personalizados. Estilos clásico y moderno. Incluyen vetas, cajillos y fibra acústica interior para reducir ruido. https://www.dreina.com/puertas\n- **Muebles de TV:** clásicos o modernos, integrados a la sala.\n- **Bares y áreas sociales:** diseños a medida.\n- **Lavanetas (vanitorios de baño):** cajones organizados, herrajes de alta durabilidad, acabados de lujo. Estilos minimalistas o tradicionales.\n\n**Datos de la empresa:**\n- 37 años de experiencia en Monterrey.\n- Dirección: Loma Alta #220, Col. Loma Larga, Monterrey, N.L.\n- Teléfono: (81) 8322 0336\n- Email: ventas@dreina.com\n- Horario: Lunes a viernes 8:00–13:00 y 14:00–18:00. Sábado 9:00–14:00 con cita previa.\n- Redes: Facebook, Instagram, Pinterest, TikTok, YouTube, WhatsApp.\n\n### 7. TRANSFERENCIA A AGENTE HUMANO (MANDATORIO)\n\nSi el usuario en cualquier momento indica que desea hablar con un humano, asesor, o representante real, DEBES:\n1. Responder con un mensaje de transición amigable (1-2 oraciones máximo, NO preguntes nada más).\n2. Incluir el tag exacto `[HUMAN_HANDOFF]` al final del mensaje de texto, en una línea propia.\n\nFrases que ACTIVAN [HUMAN_HANDOFF] (sin importar cómo estén escritas):\n- \"quiero hablar con un humano\"\n- \"quiero hablar con una persona\"\n- \"quiero un asesor\"\n- \"asesor humano\"\n- \"hablar con alguien\"\n- \"con una persona real\"\n- \"representante\"\n- \"opción 5\" / \"5\" cuando el menú principal está activo / \"5️⃣\"\n- cualquier variante de las anteriores\n\nFormato OBLIGATORIO de respuesta cuando se activa handoff:\nClaro, te conecto con un asesor de Reyna. Un momento por favor 🧑‍💼\n[HUMAN_HANDOFF]\n\nREGLA CRÍTICA: El tag `[HUMAN_HANDOFF]` NUNCA debe aparecer sin el mensaje de transición. Siempre escribe primero el texto, luego el tag en línea separada.\n\n### 8. MOSTRAR PROYECTOS POR CATEGORÍA (GALERÍA)\n\n### 9. UBICACIÓN (OPCIÓN 6 — VEN A VISITARNOS)\n\nCuando el usuario seleccione la opción 6 o pregunte por la dirección/ubicación/cómo llegar, responde SIEMPRE con este mensaje exacto:\n\n\"📍 Estamos en *Loma Alta #220, Col. Loma Larga, Monterrey, N.L.* ¡Te esperamos!\n\nhttps://maps.app.goo.gl/Sd2SoKK48GWKehyN7\"\n\nNo agregues más texto ni preguntas. Solo la dirección, la liga y la invitación.\n\n\n\nCuando el cliente seleccione una categoría del menú (opciones 1 a 5) o pida ver fotos/proyectos/galería de algún tipo de mueble, DEBES:\n\n1. Incluir el tag exacto `[GALERIA_<CATEGORIA>]` en una línea propia AL INICIO de tu respuesta, donde `<CATEGORIA>` es UNO de:\n   - `COCINAS`\n   - `CLOSETS`\n   - `BARES`\n2. Después del tag, escribir 1 oración corta de transición + invitación a cotizar.\n\nMapeo de opción del menú a categoría:\n- Opción 1 → `[GALERIA_COCINAS]`\n- Opción 2 → `[GALERIA_CLOSETS]`\n- Opción 3 → `[GALERIA_BARES]`\n- Opción 4 → No es galería (inicia cotización)\n- Opción 5 → No es galería (transfiere a asesor, ver sección 7)\n- Opción 6 → No es galería (envía ubicación, ver sección 9)\n\nFormato OBLIGATORIO:\n[GALERIA_COCINAS]\nAquí te muestro algunos de nuestros proyectos de cocinas. ¿Te gustaría cotizar una para tu hogar? 🪵\n\nREGLAS DE LA GALERÍA:\n- Cada tag `[GALERIA_X]` se emite máximo UNA VEZ por categoría por conversación. Si el cliente vuelve a pedir la misma galería, responde con texto solamente (sin el tag).\n- NO combinar `[GALERIA_X]` con `[HUMAN_HANDOFF]` ni `[LEAD_COMPLETE]` en el mismo mensaje.\n- NUNCA emitas un tag de galería si los números aparecen en otro contexto (presupuesto, años, cantidades).\n- Si tras la galería el cliente responde algo vago u off-topic, NO repitas la pregunta. Vuelve al menú resumido: \"¿Te gustaría ver otra categoría o cotizar tu proyecto? Escribe el número de la opción que prefieras 😊\""
+          "systemMessage": "Eres el asistente virtual de **Reyna Cocinas y Carpinterías Finas**, empresa con 37 años de trayectoria en Monterrey, México. Tu función es ser la primera impresión del negocio: profesional, cálida y eficiente.\n\n---\n\n## IDENTIDAD Y TONO\n\n- Nombre de la empresa: Reyna Cocinas y Carpinterías Finas\n- Ciudad: Monterrey, México\n- Trayectoria: 37 años\n- Especialidades: cocinas integrales, closets, vestidores, bares, plafones, puertas, muebles de TV, lavanetas\n- Tono: profesional y cálido. No informal. No uses \"oye\", \"chido\", \"súper\". Usa \"con gusto\", \"por supuesto\", \"claro que sí\".\n- No uses emojis en exceso. Máximo 1-2 por mensaje donde aporten claridad.\n\n---\n\n## HORARIOS Y CONTACTO\n\n- Lunes a viernes: 9:00 am – 6:00 pm\n- Sábados: 10:00 am – 2:00 pm\n- Domingos: cerrado\n- Dirección: Loma Alta #220, Col. Loma Larga, Monterrey, N.L. Tel: (81) 8322 0336\n- Para agendar visita: \"escríbenos a este mismo número y con gusto coordinamos.\"\n\n---\n\n## TU FUNCIÓN\n\nEres el recepcionista. Presentas el negocio, respondes preguntas generales y canalizas al cliente.\n\nCuando el cliente te contacte por primera vez (o sin contexto previo), muestra el menú:\n\nBienvenido/a a *Reyna Cocinas y Carpinterías Finas* 🪵\n37 años creando espacios únicos en Monterrey.\n\n¿En qué le podemos ayudar hoy?\n\n1️⃣ Ver galería de proyectos\n2️⃣ Diseñemos tu mueble (diseño + cotización)\n3️⃣ Ubicación y horarios\n4️⃣ Hablar con un asesor\n\nResponda con el número de su opción.\n\n---\n\n## OPCIÓN 1 — GALERÍA DE PROYECTOS\n\nMuestra este submenú:\n\n*Galería de proyectos Reyna*\n\n¿Qué categoría desea ver?\n\n🅰️ Cocinas integrales\n🅱️ Closets y vestidores\n🅲️ Bares y espacios de entretenimiento\n\nResponda con la letra de la opción.\n\nSegún la respuesta del cliente, emite el tag al INICIO de tu respuesta:\n- A / \"cocinas\" → [GALERIA_COCINAS]\n- B / \"closets\" / \"vestidores\" → [GALERIA_CLOSETS]\n- C / \"bares\" → [GALERIA_BARES]\n\nDespués del tag, añade 1 oración de transición.\n\nSi después de ver la galería el cliente quiere cotizar, haz la cotización tú mismo (ver sección COTIZACIÓN CLÁSICA).\n\n---\n\n## OPCIÓN 2 — DISEÑEMOS TU MUEBLE\n\nCuando el cliente elija esta opción, emite el tag [ROUTE_DESIGNER] y responde EXACTAMENTE:\n\n\"¡Con gusto! Te paso con nuestro asistente de diseño para crear algo especial para ti 🎨\"\n\nNo expliques más. No menciones renders ni inteligencia artificial.\n\n---\n\n## OPCIÓN 3 — UBICACIÓN Y HORARIOS\n\nResponde con:\n\n*Reyna Cocinas y Carpinterías Finas*\n📍 Loma Alta #220, Col. Loma Larga, Monterrey, N.L.\n📞 (81) 8322 0336\n\n🕐 Horarios:\n• Lunes a viernes: 9:00 am – 6:00 pm\n• Sábados: 10:00 am – 2:00 pm\n• Domingos: cerrado\n\nhttps://maps.app.goo.gl/Sd2SoKK48GWKehyN7\n\n---\n\n## OPCIÓN 4 — HABLAR CON UN ASESOR\n\nCuando el cliente elija esta opción o diga \"quiero hablar con alguien\", \"con una persona\", \"con un humano\", \"llámame\":\n\n\"Por supuesto, le conectamos con uno de nuestros asesores. Un momento por favor.\"\n[HUMAN_HANDOFF]\n\n---\n\n## COTIZACIÓN CLÁSICA (sin render)\n\nSi el cliente viene de galería y quiere cotizar, o pide precio directamente sin pasar por diseño, recopila conversacionalmente:\n1. Nombre completo\n2. Correo electrónico (validar formato con @)\n3. Tipo de mueble\n4. Descripción breve del proyecto\n5. Presupuesto estimado (rangos: menos de $30,000 / $30,000–$80,000 / más de $80,000 MXN)\n\nCuando tengas todos los datos:\n[LEAD_COMPLETE]{\"nombre\":\"VALOR\",\"email\":\"VALOR\",\"presupuesto\":\"VALOR\",\"tipo\":\"VALOR\",\"descripcion\":\"VALOR\"}[/LEAD_COMPLETE]\n\n\"Perfecto, hemos registrado su solicitud. Uno de nuestros asesores se pondrá en contacto con usted a la brevedad. ¡Muchas gracias!\"\n\n---\n\n## CLIENTE YA REGISTRADO\n\nSi el contexto indica \"[CONTEXTO INTERNO:\" y \"YA ESTÁ REGISTRADO\", NO uses el menú. Saluda por su nombre, recuérdale que ya está registrado y que el equipo de ventas lo contactará pronto.\n\n---\n\n## REGLAS GENERALES\n\n- Respuestas de 2-4 oraciones (excepto menú y cierre de lead).\n- No inventes precios específicos.\n- Solo respondes sobre Reyna (carpintería, muebles, ubicación, horario).\n- Si el cliente escribe algo fuera de tema por 3ra vez: \"Agradezco tu interés, pero solo atiendo consultas de Reyna. ¡Quedamos a la orden!\"\n- /reset: ignóralo con naturalidad si un cliente lo escribe.\n- Nunca menciones al asistente de diseño ni sistemas internos.\n\n---\n\n## TAGS QUE PUEDES EMITIR\n\n- [ROUTE_DESIGNER] — cliente eligió opción 2\n- [GALERIA_COCINAS] — subopción A de galería\n- [GALERIA_CLOSETS] — subopción B de galería\n- [GALERIA_BARES] — subopción C de galería\n- [HUMAN_HANDOFF] — cliente pide asesor (siempre con mensaje de transición antes)\n- [LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"presupuesto\":\"...\",\"tipo\":\"...\",\"descripcion\":\"...\"}[/LEAD_COMPLETE] — cotización completada"
         }
       },
-      "id": "ccb58402-4d52-4630-b006-5c6a36ac1d4f",
+      "id": "e585b7e3-35dd-4772-ae45-36109ce5ed3f",
       "name": "Asistente REYNA",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -672,
-        -64
+        -4336,
+        352
       ]
     },
     {
@@ -217,13 +217,13 @@
           "temperature": 0.5
         }
       },
-      "id": "f50e66a2-360e-402a-a440-52bb24a37185",
+      "id": "8593582b-86b2-437d-a834-44a3f5158a68",
       "name": "Google Gemini Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -672,
-        160
+        -4336,
+        576
       ],
       "credentials": {
         "googlePalmApi": {
@@ -238,26 +238,26 @@
         "sessionKey": "={{ $('Extract Message').item.json.sessionId }}",
         "contextWindowLength": 10
       },
-      "id": "17b01835-370e-4771-80c6-bde61f70a02e",
+      "id": "fd2b9981-f9bc-4892-99df-3487eadf8393",
       "name": "Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -544,
-        160
+        -4208,
+        576
       ]
     },
     {
       "parameters": {
-        "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst openTag = '[LEAD_COMPLETE]';\nconst closeTag = '[/LEAD_COMPLETE]';\nlet cleanMessage = agentOutput;\nlet leadComplete = false;\nlet leadData = null;\n\nconst HANDOFF_TAG = '[HUMAN_HANDOFF]';\nlet humanHandoff = false;\nif (agentOutput.includes(HANDOFF_TAG)) {\n  humanHandoff = true;\n  cleanMessage = agentOutput.replace(HANDOFF_TAG, '').trim();\n}\n\n// === GALERIA: detectar [GALERIA_<CATEGORIA>] ===\n// Mapa categoria -> imagenes (URLs publicas). Editar aqui cuando lleguen las fotos reales de Reyna.\nconst GALERIA_IMAGES = {\n  COCINAS:    [\n    'https://drive.google.com/thumbnail?id=1HQXQNFg20OlMnXXWObNYxQTp_OGauyr-&sz=w800',\n    'https://drive.google.com/thumbnail?id=1Bv7tlEhpU3r5ZLg2NqtfX5bXVoOdB5lV&sz=w800'\n  ],\n  CLOSETS:    [\n    'https://drive.google.com/thumbnail?id=1hcodzIB8ppOprNHbJ5VlphyGBR5B2Sx3&sz=w800',\n    'https://drive.google.com/thumbnail?id=1w-gKaNQDfvH_Yvk4sJQMLgEhqWBb_E33&sz=w800'\n  ],\n  PLAFONES:   [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Plafon+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Plafon+2'\n  ],\n  PUERTAS:    [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Puerta+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Puerta+2',\n    'https://placehold.co/800x600/CD853F/FFFFFF?text=Puerta+3'\n  ],\n  MUEBLES_TV: [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Mueble+TV+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Mueble+TV+2'\n  ],\n  BARES:      [\n    'https://drive.google.com/thumbnail?id=1MLyprumzWVSNaUAPKsUjkcyj5umm5RtI&sz=w800'\n  ],\n  LAVANETAS:  [\n    'https://placehold.co/800x600/8B4513/FFFFFF?text=Lavaneta+1',\n    'https://placehold.co/800x600/A0522D/FFFFFF?text=Lavaneta+2'\n  ]\n};\nlet galeria = null;\nlet imagenes = [];\nconst galRegex = /\\[GALERIA_([A-Z_]+)\\]/;\nconst galMatch = agentOutput.match(galRegex);\nif (galMatch) {\n  const cat = galMatch[1];\n  if (GALERIA_IMAGES[cat]) {\n    galeria = cat;\n    imagenes = GALERIA_IMAGES[cat];\n  }\n  cleanMessage = cleanMessage.replace(galMatch[0], '').trim();\n  if (cleanMessage.length < 10) {\n    cleanMessage = 'Aquí te comparto algunos de nuestros proyectos. ¿Te gustaría cotizar el tuyo? 🪵';\n  }\n}\nconst sendShowreel = false; // legado, ya no aplica en Reyna\n\nconst isInvalid = (val) => !val || val.includes('...') || val.trim().length < 2;\nconst EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,24}$/;\nconst emailOK = (e) => typeof e === 'string' && EMAIL_RE.test(e.trim()) && !e.includes('..');\nconst PRESUPUESTO_FALSO = /^(no\\s*(especificado|proporcionado|definido|disponible|tengo|aplica)|n\\/a|na|ninguno|sin\\s*presupuesto|desconocido|por\\s*definir|a\\s*definir|pendiente|\\.\\.\\.)$/i;\nconst presupuestoOK = (p) => p && !p.includes('...') && p.trim().length >= 2 && !PRESUPUESTO_FALSO.test(p.trim());\nconst proyectoOK = (p) => p && p.trim().length >= 3 && !p.includes('...');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.history) wf.history = {};\nif (isReset) wf.history[phoneNumber] = [];\nif (!wf.history[phoneNumber]) wf.history[phoneNumber] = [];\nif (!wf.partialLeads) wf.partialLeads = {};\nif (isReset) delete wf.partialLeads[phoneNumber];\nif (!wf.partialLeads[phoneNumber]) wf.partialLeads[phoneNumber] = {};\nconst partial = wf.partialLeads[phoneNumber];\nfunction extractFromText(text) {\n  const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\n  const phoneMatch = text.match(/(\\+?\\d[\\d\\s\\-()]{6,18}\\d)/g);\n  return {\n    email: emailMatch ? emailMatch[0] : null,\n    telefono: phoneMatch ? phoneMatch.find(p => p.replace(/\\D/g,'').length >= 7) : null\n  };\n}\nconst fromUser = extractFromText(userMsg || '');\nif (fromUser.email && emailOK(fromUser.email) && !partial.email) partial.email = fromUser.email;\nconst lastBotMsg = (wf.history[phoneNumber].slice().reverse().find(x => x.startsWith('B: ')) || '').toLowerCase();\nconst userText = (userMsg || '').trim();\nconst explicitNamePatterns = [/^(?:soy|me llamo|mi nombre es|me dicen)\\s+([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ\\s]{1,40})/i];\nlet explicitName = null;\nfor (const re of explicitNamePatterns) {\n  const m = userText.match(re);\n  if (m && m[1]) { explicitName = m[1].trim().split(/\\s+/).slice(0, 3).join(' '); break; }\n}\nconst botAskedName = lastBotMsg.includes('nombre completo') ||\n  (lastBotMsg.includes('nombre') && !lastBotMsg.includes('tel') && !lastBotMsg.includes('email') && !lastBotMsg.includes('presupuesto'));\nconst userHasEmail = /@/.test(userText);\nconst userHasPhone = /\\d[\\d\\s\\-()]{5,}\\d/.test(userText);\nconst userIsMenuChoice = /^[1-7]\\b/.test(userText);\nconst userHasManyDigits = (userText.match(/\\d/g) || []).length > 4;\nconst PIROPOS = /^(hola|buenas|buenos dias|buenos días|no lo se|no lo sé|no se|no sé|no tengo|si|sí|no|guapa|linda|hermosa|bonita|genial|perfecto|gracias)$/i;\nconst looksLikeRealName = userText.length >= 2 && !userHasEmail && !userHasPhone && !userIsMenuChoice && !userHasManyDigits && !/^\\d+$/.test(userText) && !userText.startsWith('/') && !PIROPOS.test(userText);\nif (explicitName && !partial.nombre) {\n  partial.nombre = explicitName.replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n} else if (botAskedName && looksLikeRealName && !partial.nombre) {\n  const parts = userText.split(/[\\s\\n]+/).slice(0, 3);\n  partial.nombre = parts.join(' ').replace(/[^a-zA-ZÀ-ÿ\\s]/g, '').trim();\n}\nconst lastWasProjectAsk = lastBotMsg.includes('tienes en mente') || lastBotMsg.includes('cuéntame') || lastBotMsg.includes('cuentame') || lastBotMsg.includes('cuéntanos') || lastBotMsg.includes('cuentanos');\nif (lastWasProjectAsk && userText.length >= 3 && !partial.proyecto) {\n  partial.proyecto = userText.slice(0, 200);\n}\nlet agentParsed = null;\nif (agentOutput.includes(openTag) && agentOutput.includes(closeTag)) {\n  const start = agentOutput.indexOf(openTag) + openTag.length;\n  const end = agentOutput.indexOf(closeTag);\n  try { agentParsed = JSON.parse(agentOutput.slice(start, end).trim()); } catch (e) {}\n  cleanMessage = agentOutput.split(openTag)[0].trim();\n}\nif (agentParsed) {\n  if (agentParsed.nombre && !isInvalid(agentParsed.nombre) && !/@/.test(agentParsed.nombre)) partial.nombre = agentParsed.nombre.trim();\n  if (agentParsed.email && emailOK(agentParsed.email)) partial.email = agentParsed.email.trim();\n  if (agentParsed.proyecto && proyectoOK(agentParsed.proyecto)) partial.proyecto = agentParsed.proyecto.trim().slice(0, 200);\n  if (agentParsed.presupuesto && presupuestoOK(agentParsed.presupuesto)) partial.presupuesto = agentParsed.presupuesto.trim();\n}\nconst tieneBase = partial.nombre && partial.email;\nconst userLower = (userMsg || '').toLowerCase().trim();\nconst noSeRegex = /^(no(\\s+lo)?\\s*(se|sé)|no\\s+tengo(\\s+idea)?|na|n\\/a|no\\s+proporcionado|depende|m[áa]s\\s+adelante|todav[íi]a\\s+no|aun\\s+no|a[úu]n\\s+no|luego(\\s+te\\s+digo)?|despu[ée]s|ninguno|sin\\s+presupuesto)\\b.*$/i;\nconst isNoSeAnswer = noSeRegex.test(userLower) || userLower === 'no' || userLower === 'si' || userLower === 'sí';\nconst lastWasBudgetAsk = lastBotMsg.includes('presupuesto');\nconst cierreTexto = (nom) => '¡Excelente, ' + (nom || 'gracias') + '! 🪵 Con esto tenemos todo lo necesario para que un asesor de Reyna analice tu proyecto. Te contactaremos muy pronto para conversar a detalle. Gracias por confiar en quienes llevamos 37 años haciendo carpintería fina. ✨';\nif (agentParsed && tieneBase && presupuestoOK(agentParsed.presupuesto) && lastWasBudgetAsk) {\n  leadComplete = true;\n  leadData = { ...partial, presupuesto: agentParsed.presupuesto.trim() };\n  if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n} else if (agentParsed && tieneBase && (!presupuestoOK(agentParsed.presupuesto) || !lastWasBudgetAsk)) {\n  if (lastWasBudgetAsk) {\n    leadComplete = true;\n    leadData = { ...partial, presupuesto: 'No proporcionado' };\n    if (!cleanMessage || cleanMessage.length < 10) cleanMessage = cierreTexto(partial.nombre);\n  } else {\n    partial.leadCompleteEmitted = false;\n    cleanMessage = '¡Perfecto, ya tenemos tu nombre y email! Solo una pregunta más: ¿cuentas con un presupuesto aproximado para tu proyecto? (Puedes decir \"no sé\" si aún no lo defines) 💰';\n  }\n} else if (tieneBase && lastWasBudgetAsk) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n} else if (partial.leadCompleteEmitted && tieneBase && userLower.length > 0) {\n  leadComplete = true;\n  const respuestaUser = (userMsg || '').trim();\n  const presupuestoFinal = (isNoSeAnswer || respuestaUser.length < 2 || respuestaUser.length > 80) ? 'No proporcionado' : respuestaUser;\n  leadData = { ...partial, presupuesto: presupuestoFinal };\n  cleanMessage = cierreTexto(partial.nombre);\n}\nif (leadData && !leadData.proyecto) leadData.proyecto = partial.proyecto || '';\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nwf.history[phoneNumber].push('U: ' + cleanUser);\nwf.history[phoneNumber].push('B: ' + cleanBot);\nif (wf.history[phoneNumber].length > 12) wf.history[phoneNumber] = wf.history[phoneNumber].slice(-12);\nif (leadComplete) delete wf.partialLeads[phoneNumber];\nconst soloUser = wf.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = new Date().toISOString();\nconst procLookup = $('Process Lookup').item.json;\nconst estadoActual = procLookup?.Estado || '';\nconst yaCalificado = estadoActual === 'Calificado';\nif (yaCalificado) { leadComplete = false; leadData = null; }\nconst upsertParcial = (leadComplete || yaCalificado) ? null : {\n  'Teléfono': phoneNumber,\n  'Estado': yaCalificado ? 'Calificado' : 'Nuevo',\n  'Última Interacción': fechaCorta,\n  'Transcripción': transcripcion,\n  ...(partial.nombre      && { 'Nombre': partial.nombre }),\n  ...(partial.email       && { 'Email': partial.email }),\n  ...(partial.proyecto    && { 'Proyecto': partial.proyecto }),\n  ...(partial.presupuesto && { 'Presupuesto': partial.presupuesto }),\n};\nreturn [{ json: { phoneNumber, cleanMessage, leadComplete, leadData, transcripcion, fechaCorta, fechaTimestamp, upsertParcial, humanHandoff, sendShowreel, galeria, imagenes, senderName: $('Extract Message').item.json.senderName } }];\n"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMsg = $('Extract Message').item.json.chatInput;\nconst isReset = $('Extract Message').item.json.isReset;\n\nconst rawText = $json.output || $json.text || $json.message || '';\n\nlet routeDesigner       = false;\nlet renderRequest       = false;\nlet descriptionFurniture = null;\nlet backToRecep         = false;\nlet humanHandoff        = false;\nlet leadComplete        = false;\nlet leadData            = null;\nlet partialData         = null;\nlet galeriaCocinas      = false;\nlet galeriaClosets      = false;\nlet galeriaBares        = false;\n\nif (rawText.includes('[ROUTE_DESIGNER]')) {\n  routeDesigner = true;\n  if (!staticData.inDesignerMode) staticData.inDesignerMode = {};\n  if (!staticData.inDesignerModeAt) staticData.inDesignerModeAt = {};\n  staticData.inDesignerMode[phoneNumber] = true;\n  staticData.inDesignerModeAt[phoneNumber] = Date.now();\n}\n\nconst renderMatch = rawText.match(/\\[RENDER_REQUEST\\]([\\s\\S]*?)\\[\\/RENDER_REQUEST\\]/);\nif (renderMatch) {\n  renderRequest = true;\n  descriptionFurniture = renderMatch[1].trim();\n}\n\nconst partialMatch = rawText.match(/\\[LEAD_PARTIAL\\]([\\s\\S]*?)\\[\\/LEAD_PARTIAL\\]/);\nif (partialMatch) {\n  try {\n    partialData = JSON.parse(partialMatch[1].trim());\n  } catch (e) {\n    partialData = null;\n  }\n}\n\nif (rawText.includes('[BACK_TO_RECEPCIONISTA]')) backToRecep = true;\nif (rawText.includes('[HUMAN_HANDOFF]')) humanHandoff = true;\n\nconst leadMatch = rawText.match(/\\[LEAD_COMPLETE\\]([\\s\\S]*?)\\[\\/LEAD_COMPLETE\\]/);\nif (leadMatch) {\n  leadComplete = true;\n  try {\n    leadData = JSON.parse(leadMatch[1].trim());\n    const renderData = staticData.renderData?.[phoneNumber];\n    if (renderData?.generatedImageUrl) {\n      leadData.generatedImageUrl = renderData.generatedImageUrl;\n    } else {\n      leadData.generatedImageUrl = null;\n    }\n  } catch (e) {\n    leadData = { parseError: true, raw: leadMatch[1].trim() };\n  }\n}\n\nif (rawText.includes('[GALERIA_COCINAS]'))  galeriaCocinas = true;\nif (rawText.includes('[GALERIA_CLOSETS]'))  galeriaClosets = true;\nif (rawText.includes('[GALERIA_BARES]'))    galeriaBares   = true;\n\nconst modeAt = staticData.inDesignerModeAt?.[phoneNumber] || 0;\nif ((Date.now() - modeAt) > 86400000 && staticData.inDesignerMode?.[phoneNumber]) {\n  staticData.inDesignerMode[phoneNumber] = false;\n}\n\nif (leadComplete || humanHandoff || backToRecep) {\n  if (staticData.inDesignerMode) staticData.inDesignerMode[phoneNumber] = false;\n  if (staticData.inDesignerModeAt) delete staticData.inDesignerModeAt[phoneNumber];\n}\n\nconst GALERIA_IMAGES = {\n  COCINAS: [\n    'https://drive.google.com/thumbnail?id=1HQXQNFg20OlMnXXWObNYxQTp_OGauyr-&sz=w800',\n    'https://drive.google.com/thumbnail?id=1Bv7tlEhpU3r5ZLg2NqtfX5bXVoOdB5lV&sz=w800'\n  ],\n  CLOSETS: [\n    'https://drive.google.com/thumbnail?id=1hcodzIB8ppOprNHbJ5VlphyGBR5B2Sx3&sz=w800',\n    'https://drive.google.com/thumbnail?id=1w-gKaNQDfvH_Yvk4sJQMLgEhqWBb_E33&sz=w800'\n  ],\n  BARES: [\n    'https://drive.google.com/thumbnail?id=1MLyprumzWVSNaUAPKsUjkcyj5umm5RtI&sz=w800',\n    'https://drive.google.com/thumbnail?id=1v6STdETu68_0eIouOWD8VHm2Z5kJVcLT&sz=w800'\n  ]\n};\n\nlet galeria = null;\nlet imagenes = [];\nif (galeriaCocinas)  { galeria = 'COCINAS'; imagenes = GALERIA_IMAGES.COCINAS; }\nif (galeriaClosets)  { galeria = 'CLOSETS'; imagenes = GALERIA_IMAGES.CLOSETS; }\nif (galeriaBares)    { galeria = 'BARES';   imagenes = GALERIA_IMAGES.BARES; }\n\nconst cleanMessage = rawText\n  .replace(/\\[ROUTE_DESIGNER\\]/g, '')\n  .replace(/\\[RENDER_REQUEST\\][\\s\\S]*?\\[\\/RENDER_REQUEST\\]/g, '')\n  .replace(/\\[LEAD_PARTIAL\\][\\s\\S]*?\\[\\/LEAD_PARTIAL\\]/g, '')\n  .replace(/\\[BACK_TO_RECEPCIONISTA\\]/g, '')\n  .replace(/\\[HUMAN_HANDOFF\\]/g, '')\n  .replace(/\\[LEAD_COMPLETE\\][\\s\\S]*?\\[\\/LEAD_COMPLETE\\]/g, '')\n  .replace(/\\[GALERIA_COCINAS\\]/g, '')\n  .replace(/\\[GALERIA_CLOSETS\\]/g, '')\n  .replace(/\\[GALERIA_BARES\\]/g, '')\n  .trim();\n\nif (!staticData.history) staticData.history = {};\nif (isReset) staticData.history[phoneNumber] = [];\nif (!staticData.history[phoneNumber]) staticData.history[phoneNumber] = [];\nconst cleanUser = (userMsg || '').replace(/\\s+/g, ' ').trim();\nconst cleanBot = (cleanMessage || '').replace(/\\s+/g, ' ').trim();\nstaticData.history[phoneNumber].push('U: ' + cleanUser);\nstaticData.history[phoneNumber].push('B: ' + cleanBot);\nif (staticData.history[phoneNumber].length > 12) staticData.history[phoneNumber] = staticData.history[phoneNumber].slice(-12);\nconst soloUser = staticData.history[phoneNumber].filter(x => x.startsWith('U: ')).map(x => x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(' | ');\n\nconst now = new Date();\nconst fechaCorta = now.toLocaleString('es-MX', { timeZone: 'America/Monterrey', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\\./g, '');\nconst fechaTimestamp = now.toISOString();\n\nlet upsertParcial = null;\nif (!leadComplete) {\n  upsertParcial = {\n    'Teléfono': phoneNumber,\n    'Estado': 'Nuevo',\n    'Última Interacción': fechaCorta,\n    'Transcripción': transcripcion,\n  };\n  if (partialData) {\n    if (partialData.nombre)      upsertParcial['Nombre']      = partialData.nombre;\n    if (partialData.email)       upsertParcial['Email']       = partialData.email;\n    if (partialData.presupuesto) upsertParcial['Presupuesto'] = partialData.presupuesto;\n    const proyectoCombinado = [partialData.tipo, partialData.descripcion].filter(Boolean).join(' — ');\n    if (proyectoCombinado)       upsertParcial['Proyecto']    = proyectoCombinado;\n  }\n}\n\nreturn [{\n  json: {\n    phoneNumber,\n    cleanMessage,\n    leadComplete,\n    leadData,\n    partialData,\n    transcripcion,\n    fechaCorta,\n    fechaTimestamp,\n    upsertParcial,\n    humanHandoff,\n    backToRecep,\n    routeDesigner,\n    renderRequest,\n    descriptionFurniture,\n    galeria,\n    imagenes,\n    sendShowreel: false,\n    senderName: $('Extract Message').item.json.senderName,\n    inDesignerMode: staticData.inDesignerMode?.[phoneNumber] === true,\n  }\n}];"
       },
-      "id": "c952c271-5b4c-4378-9e82-907758ded443",
+      "id": "06fdd750-db98-460b-8eeb-9935e26a08fd",
       "name": "Detect Lead Complete",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -320,
-        -64
+        -3984,
+        352
       ]
     },
     {
@@ -284,26 +284,26 @@
         },
         "options": {}
       },
-      "id": "3be55a7a-1637-4b26-a2be-233628444d55",
+      "id": "44562fa2-5caf-4411-999a-42738a636cad",
       "name": "�Lead?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        800,
-        -96
+        -2864,
+        320
       ]
     },
     {
       "parameters": {
-        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'Teléfono': phoneNumber,\n      'Nombre': leadData.nombre,\n      'Email': leadData.email,\n      'Proyecto': leadData.proyecto || '',\n      'Presupuesto': leadData.presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Última Interacción': fechaCorta,\n      'Transcripción': transcripcion,\n      'Timestamp': fechaTimestamp || fechaCorta.replace(/\\s+/g, '-')\n    }\n  }\n}];"
+        "jsCode": "const { phoneNumber, leadData, transcripcion, fechaCorta, fechaTimestamp } = $input.first().json;\n\nreturn [{\n  json: {\n    phoneNumber,\n    leadData,\n    upsertCalificado: {\n      'Teléfono': phoneNumber,\n      'Nombre': leadData.nombre || leadData.Nombre || '',\n      'Email': leadData.email || leadData.Email || '',\n      'Proyecto': leadData.tipo ? `[${leadData.tipo}] - ${leadData.descripcion || ''}` : (leadData.proyecto || ''),\n      'Presupuesto': leadData.presupuesto || leadData.Presupuesto || 'No proporcionado',\n      'Estado': 'Calificado',\n      'Última Interacción': fechaCorta,\n      'Transcripción': transcripcion,\n      'Timestamp': fechaTimestamp || new Date().toISOString()\n    }\n  }\n}];"
       },
-      "id": "70c2fd5b-377a-4095-a860-1072bfe08b90",
+      "id": "c25c8941-8a98-46f0-8fc3-ad97ac48bb97",
       "name": "Cliente Interesado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
-        -160
+        -2640,
+        256
       ]
     },
     {
@@ -434,13 +434,13 @@
         },
         "options": {}
       },
-      "id": "96914695-f8e3-413f-8bff-d567a3440126",
+      "id": "fe74181c-e45e-4ed5-8983-3b4e1705c80a",
       "name": "Sheets - Momento 2 (Calificado)",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        1248,
-        -160
+        -2416,
+        256
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -452,19 +452,19 @@
     {
       "parameters": {
         "sendTo": "luis.sanchezag@gmail.com",
-        "subject": "=🪵 Lead Reyna - {{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}",
-        "message": "=<h2>Nuevo Prospecto Calificado — Reyna Cocinas y Carpinterías Finas</h2>\n<table>\n<tr><td><b>Nombre</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Nombre }}</td></tr>\n<tr><td><b>Email</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Email }}</td></tr>\n<tr><td><b>WhatsApp</b></td><td>{{ $('Extract Message').item.json.phoneNumber }}</td></tr>\n<tr><td><b>Proyecto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Proyecto || 'No especificado' }}</td></tr>\n<tr><td><b>Presupuesto</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado.Presupuesto || 'No proporcionado' }}</td></tr>\n<tr><td><b>Conversación</b></td><td>{{ $('Cliente Interesado').item.json.upsertCalificado['Transcripción'] }}</td></tr>\n</table>",
+        "subject": "=🪵 Lead Reyna - {{ $('Cliente Interesado').item.json.upsertCalificado?.Nombre || 'Nuevo contacto' }}",
+        "message": "={{ (() => {\n  const nombre      = $('Cliente Interesado').item.json.upsertCalificado?.Nombre || $json.leadData?.nombre || 'Sin nombre';\n  const email       = $('Cliente Interesado').item.json.upsertCalificado?.Email || $json.leadData?.email || 'Sin email';\n  const presupuesto = $('Cliente Interesado').item.json.upsertCalificado?.Presupuesto || $json.leadData?.presupuesto || 'No indicado';\n  const proyecto    = $('Cliente Interesado').item.json.upsertCalificado?.Proyecto || $json.leadData?.descripcion || 'Sin descripción';\n  const imageUrl    = $('Cliente Interesado').item.json.leadData?.generatedImageUrl || null;\n  const phone       = $('Extract Message').item.json.phoneNumber || 'Desconocido';\n\n  const renderBlock = imageUrl ? `<tr><td style=\"padding:0 30px 24px 30px;\"><table width=\"100%\" style=\"background:#f9f5f0;border-radius:8px;padding:20px;\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"padding-bottom:12px;\"><p style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#5c3d1e;\">🎨 Diseño generado por IA</p></td></tr><tr><td style=\"text-align:center;padding-bottom:12px;\"><img src=\"${imageUrl}\" alt=\"Render\" style=\"max-width:100%;max-height:400px;border-radius:6px;border:2px solid #d4a96a;\" /></td></tr><tr><td><p style=\"margin:0;font-family:Arial,sans-serif;font-size:13px;color:#666;\"><strong>Descripción:</strong><br>${proyecto}</p></td></tr></table></td></tr>` : '';\n\n  return `<h2 style=\"font-family:Arial,sans-serif;color:#3b1f0a;\">🪵 Nuevo Prospecto — Reyna Cocinas y Carpinterías Finas</h2><table style=\"border-collapse:collapse;width:100%;font-family:Arial,sans-serif;\"><tr><td style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\">Nombre</td><td style=\"padding:8px;border:1px solid #ddd;\">${nombre}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\">Email</td><td style=\"padding:8px;border:1px solid #ddd;\">${email}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\">WhatsApp</td><td style=\"padding:8px;border:1px solid #ddd;\">+${phone}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\">Proyecto</td><td style=\"padding:8px;border:1px solid #ddd;\">${proyecto}</td></tr><tr><td style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\">Presupuesto</td><td style=\"padding:8px;border:1px solid #ddd;\">${presupuesto}</td></tr></table>${renderBlock}<p style=\"font-family:Arial,sans-serif;\"><a href=\"https://wa.me/${phone}\" style=\"background:#25d366;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin-top:16px;\">💬 Responder por WhatsApp</a></p><p style=\"font-family:Arial,sans-serif;font-size:11px;color:#aaa;\">Est Studio — Sistema automatizado de captación de leads</p>`;\n})() }}",
         "options": {
           "appendAttribution": false
         }
       },
-      "id": "701f975d-4113-40fa-bf12-344818bd1184",
+      "id": "b1e20155-c791-41fb-b804-95fde29e885f",
       "name": "Email a Ventas",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        1472,
-        -160
+        -2192,
+        256
       ],
       "webhookId": "c0b3b97a-c9d2-49f1-a0c1-1fe720b07925",
       "credentials": {
@@ -482,13 +482,13 @@
         "textBody": "={{ $('Detect Lead Complete').item.json.cleanMessage }}",
         "additionalFields": {}
       },
-      "id": "496800e9-a1a4-4350-b2b0-705ef5907b9c",
+      "id": "2604623b-bd92-49e7-9596-66113a242bd8",
       "name": "Responder WhatsApp",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        1696,
-        -96
+        -1968,
+        320
       ],
       "webhookId": "e56488f3-ed09-4886-9a77-27ae40514379",
       "credentials": {
@@ -505,13 +505,13 @@
         "nodeCredentialType": "googleSheetsOAuth2Api",
         "options": {}
       },
-      "id": "c5811a38-3d9b-4e3a-97d3-c489fa2feada",
+      "id": "7b0fcb83-8f3f-4c06-b239-5cd3b635b803",
       "name": "Lookup Lead",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2016,
-        -96
+        -5680,
+        320
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -555,39 +555,39 @@
         },
         "options": {}
       },
-      "id": "e38b6551-521f-44f4-807d-7d8d702367fc",
+      "id": "3148dc73-7fbc-4246-a41f-0fbfcaf2f2d2",
       "name": "�Ya Calificado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1568,
-        -96
+        -5232,
+        320
       ]
     },
     {
       "parameters": {
         "jsCode": "const lead = $input.first().json;\nconst phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst userMessage = $('Extract Message').item.json.chatInput;\nconst sessionId = $('Extract Message').item.json.sessionId;\nconst nombre = lead.Nombre || 'cliente';\n\nconst chatInput = `[CONTEXTO INTERNO: Este cliente (${nombre}) YA ESTÁ REGISTRADO como Calificado. NO le pidas nombre, email ni datos. Salúdalo por su nombre, recuérdale que ya lo tienes registrado y que el equipo de ventas se pondrá en contacto. Responde sus preguntas/dudas. Si el cliente pide hablar con ventas o cotizar, NO inicies calificación — simplemente confirma que el equipo lo contactará. Si insiste en registrarse de nuevo, sugiérele escribir /reset.]\\n\\nMensaje del cliente: ${userMessage}`;\n\nreturn [{ json: { phoneNumber, chatInput, sessionId, isCalificado: true } }];"
       },
-      "id": "25b08a39-b58f-4b29-a17c-e3cc53e5ffcc",
+      "id": "b0d99bbd-2b39-49ef-8d40-941f90c1be78",
       "name": "Cliente Ya Existente",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -896,
-        -256
+        -4560,
+        160
       ]
     },
     {
       "parameters": {
         "jsCode": "const phoneNumber = $('Extract Message').item.json.phoneNumber;\nconst response = $input.first().json;\nconst rows = response?.values || [];\nif (rows.length === 0) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst headers = rows[0];\nconst idIdx = headers.indexOf('Teléfono');\nconst estadoIdx = headers.indexOf('Estado');\nconst nombreIdx = headers.indexOf('Nombre');\nif (idIdx === -1) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nconst norm = (p) => String(p || '').replace(/\\D/g, '');\nlet found = null;\nfor (let i = 1; i < rows.length; i++) {\n  if (norm(rows[i][idIdx]) === norm(phoneNumber)) {\n    found = rows[i];\n    break;\n  }\n}\nif (!found) {\n  return [{ json: { found: false, Estado: '', Nombre: '', phoneNumber } }];\n}\nreturn [{ json: {\n  found: true,\n  Estado: found[estadoIdx] || '',\n  Nombre: found[nombreIdx] || '',\n  phoneNumber\n} }];"
       },
-      "id": "ca7f3f18-1bdb-47e2-ba3f-6b34a0385e90",
+      "id": "08064be9-4a8f-453a-9bee-41582ec32621",
       "name": "Process Lookup",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1792,
-        -96
+        -5456,
+        320
       ]
     },
     {
@@ -614,13 +614,13 @@
         },
         "options": {}
       },
-      "id": "518ab663-1168-4ee6-bc25-67c545846d18",
+      "id": "da05a8e2-4f10-4d1b-878e-fc9d3be48c3a",
       "name": "�Existe en Sheet?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1344,
-        16
+        -5008,
+        432
       ]
     },
     {
@@ -647,13 +647,13 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "id": "d1dc2132-8db3-4236-93c5-3465a5a5b868",
       "name": "¿Guardar Parcial?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        352,
-        -96
+        -3312,
+        320
       ]
     },
     {
@@ -672,18 +672,7 @@
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/edit#gid=1001783326"
         },
         "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Teléfono": "={{ $json.upsertParcial['Teléfono'] }}",
-            "Nombre": "={{ $json.upsertParcial.Nombre }}",
-            "Email": "={{ $json.upsertParcial.Email }}",
-            "Proyecto": "={{ $json.upsertParcial.Proyecto }}",
-            "Presupuesto": "={{ $json.upsertParcial.Presupuesto }}",
-            "Estado": "={{ $json.upsertParcial.Estado }}",
-            "Última Interacción": "={{ $json.upsertParcial['Última Interacción'] }}",
-            "Transcripción": "={{ $json.upsertParcial['Transcripción'] }}",
-            "Timestamp": "={{ new Date().toISOString() }}"
-          },
+          "mappingMode": "autoMapInputData",
           "matchingColumns": [
             "Teléfono"
           ],
@@ -781,16 +770,15 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         },
-        "options": {},
-        "continueOnFail": true
+        "options": {}
       },
-      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "id": "a73cedc0-b403-4d43-b426-cd0ac8d41435",
       "name": "Sheets - Parcial",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        576,
-        -16
+        -3088,
+        400
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -804,13 +792,13 @@
       "parameters": {
         "jsCode": "const { phoneNumber } = $input.first().json;\nconst wf = $getWorkflowStaticData('global');\nif (!wf.humanMode) wf.humanMode = {};\nconst isPaused = wf.humanMode[phoneNumber] === true;\nreturn [{ json: { ...$input.first().json, isPaused } }];"
       },
-      "id": "df036352-3af9-42b1-956d-16e022e62488",
+      "id": "5627ef35-674b-456d-9b9c-b4c0fd414b43",
       "name": "Check Pausa",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2464,
-        16
+        -6128,
+        432
       ]
     },
     {
@@ -837,13 +825,13 @@
         },
         "options": {}
       },
-      "id": "6be20b28-063d-4cbc-8580-c9e072309f5b",
+      "id": "575268b9-b8b1-48c9-87d7-26e6b281ad71",
       "name": "¿En Pausa?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -2240,
-        16
+        -5904,
+        432
       ]
     },
     {
@@ -854,13 +842,13 @@
         "textBody": "⏳ Tu conversación está siendo atendida por un agente de Reyna. Te responderemos muy pronto. Si fue un error, escribe /volver para regresar al bot.",
         "additionalFields": {}
       },
-      "id": "9a35d7e2-8d1e-47b1-863f-93b5e5f0a67d",
+      "id": "93cdcff9-214d-45bf-9c46-25aed218106d",
       "name": "Responder En Atención",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        -2016,
-        112
+        -5680,
+        528
       ],
       "webhookId": "146e8dae-2866-4d78-a378-9bb9613ed72c",
       "credentials": {
@@ -894,26 +882,26 @@
         },
         "options": {}
       },
-      "id": "f3aba0f0-da62-44e2-8406-fc80ed44f25c",
+      "id": "61fc54a2-5a72-4d3e-89e6-984085c17d93",
       "name": "¿Handoff?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        128,
-        -192
+        -3536,
+        224
       ]
     },
     {
       "parameters": {
         "jsCode": "const { phoneNumber, senderName, cleanMessage, fechaCorta } = $input.first().json;\nconst wf = $getWorkflowStaticData('global');\nif (!wf.humanMode) wf.humanMode = {};\nif (!wf.humanModeAt) wf.humanModeAt = {};\nwf.humanMode[phoneNumber] = true;\nwf.humanModeAt[phoneNumber] = Date.now();\n\nconst history = (wf.history && wf.history[phoneNumber]) || [];\nconst historyText = history.length > 0 ? history.slice(-10).join('\\n') : '(sin historial)';\nconst phoneFormatted = phoneNumber.startsWith('+') ? phoneNumber : '+' + phoneNumber;\n\nconst contextMessage = `--- Contexto WhatsApp ---\\nNúmero: ${phoneNumber}\\nNombre: ${senderName || 'Desconocido'}\\nFecha: ${fechaCorta}\\n\\nHistorial:\\n${historyText}\\n\\n⚠ El cliente solicitó hablar con un agente humano.`;\n\nreturn [{ json: {\n  phoneNumber,\n  phoneFormatted,\n  senderName: senderName || 'Cliente WhatsApp',\n  cleanMessage,\n  contextMessage,\n  fechaCorta\n} }];"
       },
-      "id": "909c16f9-6537-497e-b1eb-634bdb741135",
+      "id": "3d8e575e-e7eb-4210-94dd-8858a73a6649",
       "name": "Prep Handoff",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        352,
-        -352
+        -3312,
+        64
       ]
     },
     {
@@ -927,13 +915,13 @@
         "jsonBody": "={\n  \"name\": \"{{ $json.senderName }}\",\n  \"phone_number\": \"{{ $json.phoneFormatted }}\"\n}",
         "options": {}
       },
-      "id": "baf52aef-f755-46ca-a920-2a6e8ccd4028",
+      "id": "a5bcd234-0a8e-47b2-8934-fddcda319739",
       "name": "Chatwoot - Crear Contacto",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        576,
-        -352
+        -3088,
+        64
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -954,13 +942,13 @@
         "jsonBody": "={\n  \"inbox_id\": 1,\n  \"contact_id\": {{ $('Chatwoot - Buscar Contacto').item.json.payload[0].id }}\n}",
         "options": {}
       },
-      "id": "0a83f9c9-b87a-4bda-be2e-e4746dd665b5",
+      "id": "2829ed36-f9d1-4e73-b738-07bba7e6cb9f",
       "name": "Chatwoot - Crear Conversación",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1024,
-        -352
+        -2640,
+        64
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -981,13 +969,13 @@
         "jsonBody": "={\n  \"content\": {{ JSON.stringify($('Prep Handoff').item.json.contextMessage) }},\n  \"message_type\": \"outgoing\",\n  \"private\": true\n}",
         "options": {}
       },
-      "id": "69c5d54e-f3b2-432e-abf9-be808f4e2817",
+      "id": "72a3d0ba-9533-4794-b7ac-678e58f1e188",
       "name": "Chatwoot - Enviar Historial",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1248,
-        -352
+        -2416,
+        64
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -1005,13 +993,13 @@
         "textBody": "={{ $('Prep Handoff').item.json.cleanMessage }}",
         "additionalFields": {}
       },
-      "id": "736a563f-b850-42e3-b0d7-2e80559abbeb",
+      "id": "398cac79-00d0-496a-a9aa-b7cadeb2cf7f",
       "name": "Responder WA Handoff",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        1472,
-        -352
+        -2192,
+        64
       ],
       "webhookId": "67fc1a6e-e87d-4b03-a391-657f3d3c064c",
       "credentials": {
@@ -1028,13 +1016,13 @@
         "nodeCredentialType": "httpHeaderAuth",
         "options": {}
       },
-      "id": "a9b3c4d5-0001-0001-0001-chatwoot00001",
+      "id": "6eb83ab1-6af7-4712-b1a0-ab4871f67be2",
       "name": "Chatwoot - Buscar Contacto",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        800,
-        -352
+        -2864,
+        64
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -1051,13 +1039,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "resume-webhook-001",
+      "id": "bcba622f-e462-4e52-865c-d3569113e720",
       "name": "Webhook Resume",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -2912,
-        336
+        -6576,
+        752
       ],
       "webhookId": "c92bcfbb-d9bb-499a-b12c-d32b23d7d69d"
     },
@@ -1065,13 +1053,13 @@
       "parameters": {
         "jsCode": "const rawPhone = $input.first().json.phoneNumber || $input.first().json.body?.phoneNumber || '';\nconst phoneNumber = String(rawPhone).replace(/\\D/g, '');\nconst wf = $getWorkflowStaticData('global');\nif (!wf.resetEpochs) wf.resetEpochs = {};\nif (phoneNumber) {\n  wf.resetEpochs[phoneNumber] = Date.now();\n  if (wf.humanMode) delete wf.humanMode[phoneNumber];\n  if (wf.humanModeAt) delete wf.humanModeAt[phoneNumber];\n}\nreturn [{ json: { ok: true, phoneNumber } }];"
       },
-      "id": "resume-code-001",
+      "id": "b6aee5b7-a440-4a89-9a67-02bb92d849e7",
       "name": "Limpiar humanMode",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2688,
-        336
+        -6352,
+        752
       ]
     },
     {
@@ -1082,13 +1070,13 @@
           "responseCode": 200
         }
       },
-      "id": "resume-respond-001",
+      "id": "3fca16a7-e67c-4b26-8d97-4ac5f31d99ef",
       "name": "Respond Resume OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -2464,
-        336
+        -6128,
+        752
       ]
     },
     {
@@ -1116,13 +1104,13 @@
         },
         "options": {}
       },
-      "id": "showreel-if-001",
+      "id": "76f10b1b-2ef7-4269-b1be-84d089422064",
       "name": "¿Galería?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -96,
-        -64
+        -3760,
+        352
       ]
     },
     {
@@ -1134,13 +1122,13 @@
         "mediaLink": "={{ $json.url }}",
         "additionalFields": {}
       },
-      "id": "showreel-video-001",
+      "id": "ee2c54c2-5cfb-411c-885d-735001f5ffae",
       "name": "Enviar Imagen Galería",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        576,
-        112
+        -3088,
+        528
       ],
       "webhookId": "9716cd9d-c4cc-4fe3-961a-25319af33928",
       "credentials": {
@@ -1158,13 +1146,13 @@
         "textBody": "={{ $('Detect Lead Complete').item.json.cleanMessage }}",
         "additionalFields": {}
       },
-      "id": "showreel-text-001",
+      "id": "be8165e8-0235-42b2-8479-7e8d0147734b",
       "name": "Responder WA Texto Galería",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        128,
-        112
+        -3536,
+        528
       ],
       "webhookId": "04022a8e-8e44-4374-9043-6afbc95081da",
       "credentials": {
@@ -1175,56 +1163,565 @@
       }
     },
     {
-      "id": "galeria-split-001",
+      "parameters": {
+        "jsCode": "const imgs = $('Detect Lead Complete').item.json.imagenes || [];\nreturn imgs.map(url => ({ json: { url } }));"
+      },
+      "id": "4289531c-87c6-4dd9-b628-c6715a88b0c6",
       "name": "Split Imágenes Galería",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        352,
-        112
-      ],
-      "parameters": {
-        "jsCode": "const imgs = $('Detect Lead Complete').item.json.imagenes || [];\nreturn imgs.map(url => ({ json: { url } }));"
-      }
+        -3312,
+        528
+      ]
     },
     {
-      "id": "consolidar-cta-001",
-      "name": "Consolidar CTA",
+      "parameters": {
+        "jsCode": "const phone = $('Extract Message').item.json.phoneNumber;\nconst staticData = $getWorkflowStaticData('global');\nconst modeAt = staticData.inDesignerModeAt?.[phone] || 0;\nconst expired = (Date.now() - modeAt) > 86400000;\nif (expired && staticData.inDesignerMode?.[phone]) {\n  staticData.inDesignerMode[phone] = false;\n  delete staticData.inDesignerModeAt[phone];\n}\nconst inDesignerMode = staticData.inDesignerMode?.[phone] === true;\nconst designerEpoch = staticData.inDesignerModeAt?.[phone] || 0;\nconst designerSessionId = `${phone}-dise-${designerEpoch}`;\nreturn { ...$json, inDesignerMode, designerSessionId };"
+      },
+      "id": "0a594560-4270-43b6-85ee-fbfcd40a24ec",
+      "name": "Resolver Mode",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        800,
-        112
-      ],
+        -5680,
+        432
+      ]
+    },
+    {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const phoneNumber = $('Extract Message').first().json.phoneNumber;\nreturn [{ json: { phoneNumber } }];"
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1a2b3d4-e5f6-7890-abcd-ef1234567890",
+              "leftValue": "={{ $json.inDesignerMode }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7c701901-a377-4890-950a-4f2153ec73db",
+      "name": "¿inDesignerMode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -5456,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Message').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "Eres el asistente de diseño de **Reyna Cocinas y Carpinterías Finas**, Monterrey, México. Eres experto en carpintería fina y diseño de interiores. El cliente llegó porque quiere diseñar un mueble personalizado. Tu objetivo es guiarlo desde la descripción de su idea hasta cerrar su cotización.\n\n---\n\n## IDENTIDAD Y TONO\n\n- Profesional, entusiasta del diseño, sin ser informal.\n- Especialidades: cocinas integrales, closets, vestidores, bares, plafones, puertas, muebles de TV, lavanetas.\n- Tono cálido y orientado a la acción. Cada mensaje debe avanzar la conversación.\n\n---\n\n## REGLA CRÍTICA: REUSAR CONTEXTO\n\nAntes de preguntar cualquier dato, revisa el historial reciente de la conversación. Si el cliente ya te dijo el tipo de mueble, la descripción del proyecto, su nombre, email o presupuesto, **NO se lo vuelvas a preguntar**. Asume que ya lo tienes y avanza.\n\nEjemplos:\n- Cliente dijo \"Quiero un mueble de TV con repisas\" → ya tienes tipo: \"Mueble de TV\" y descripcion: \"Mueble de TV con repisas\". NO preguntes \"¿qué tipo de mueble busca?\".\n- Cliente dijo \"Soy Luis Sánchez\" → ya tienes nombre: \"Luis Sánchez\". NO preguntes \"¿cuál es su nombre?\".\n\nSi tienes duda, pregunta de forma confirmatoria: \"Para confirmar, ¿el mueble es de TV con repisas, verdad?\".\n\n---\n\n## FLUJO PRINCIPAL\n\n### PASO 1 — SALUDO INICIAL\n\nSaluda brevemente:\n\"¡Con gusto! Cuéntenos qué tiene en mente: tipo de mueble, material, color, estilo... lo que tenga pensado. Mientras más detalle nos dé, mejor quedará su diseño 🪵\"\n\n### PASO 2 — RECIBIR DESCRIPCIÓN Y SOLICITAR RENDER\n\nCuando el cliente describe el mueble, emite **dos tags en el mismo mensaje**:\n[LEAD_PARTIAL]{\"tipo\":\"VALOR_INFERIDO\",\"descripcion\":\"DESCRIPCIÓN COMPLETA TAL COMO LA DIO EL CLIENTE\"}[/LEAD_PARTIAL]\n[RENDER_REQUEST]descripción del mueble tal como la describió el cliente[/RENDER_REQUEST]\n\nDespués de los tags: \"Perfecto, estoy generando una visualización de su diseño. En un momento la recibirá.\"\n\nEl campo tipo debe ser una de estas categorías inferidas: Cocina, Closet, Vestidor, Bar, Plafón, Puerta, Mueble de TV, Lavaneta.\n\n### PASO 3 — REACCIÓN AL RENDER\n\nDespués de que el sistema envíe la imagen al cliente:\n\"¿Qué le parece este diseño? ¿Hay algo que le gustaría ajustar — materiales, dimensiones, distribución, colores?\"\n\n### PASO 4 — ITERACIÓN (máximo 2 renders totales)\n\nSi el cliente pide ajuste y aún quedan intentos: pide la descripción del ajuste y emite otro [RENDER_REQUEST] (sin tag [LEAD_PARTIAL] esta vez).\n\nSi ya usó 2 renders y pide otro: \"Ya generamos 2 versiones del diseño. Continuemos con su cotización.\" y avanza al Paso 5.\n\n### PASO 5 — RECOPILACIÓN DE DATOS RESTANTES\n\nRecopila SOLO los datos que aún no tienes. Pide uno por mensaje. Cuando el cliente te dé un dato, emite [LEAD_PARTIAL] con TODO lo acumulado hasta el momento.\n\nDatos a recopilar:\n- nombre completo\n- email\n- presupuesto estimado (rangos: menos de $30,000 / $30,000–$80,000 / más de $80,000 MXN)\n- tipo de mueble (si no lo tienes ya del Paso 2)\n- descripcion del proyecto (si no la tienes ya del Paso 2)\n\n**Ejemplo de Paso 5 cuando ya tienes tipo + descripcion del Paso 2:**\n\nBot: \"Para preparar su cotización, ¿me puede dar su nombre completo?\"\nCliente: \"Luis Sánchez\"\nBot: [LEAD_PARTIAL]{\"nombre\":\"Luis Sánchez\",\"tipo\":\"Mueble de TV\",\"descripcion\":\"Mueble de TV con repisas\"}[/LEAD_PARTIAL] \"Gracias, Luis. ¿Cuál es su email?\"\nCliente: \"luis@gmail.com\"\nBot: [LEAD_PARTIAL]{\"nombre\":\"Luis Sánchez\",\"email\":\"luis@gmail.com\",\"tipo\":\"Mueble de TV\",\"descripcion\":\"Mueble de TV con repisas\"}[/LEAD_PARTIAL] \"Perfecto. Por último, ¿en qué rango está su presupuesto?\"\nCliente: \"30 a 80\"\nBot: [LEAD_PARTIAL]{\"nombre\":\"Luis Sánchez\",\"email\":\"luis@gmail.com\",\"presupuesto\":\"$30,000 – $80,000 MXN\",\"tipo\":\"Mueble de TV\",\"descripcion\":\"Mueble de TV con repisas\"}[/LEAD_PARTIAL] \"Excelente, ya tenemos todo.\" (avanza a Paso 6)\n\n### PASO 6 — CIERRE\n\nCuando ya tienes los 5 datos (nombre, email, presupuesto, tipo, descripcion), emite:\n\n[LEAD_COMPLETE]{\"nombre\":\"VALOR\",\"email\":\"VALOR\",\"presupuesto\":\"VALOR\",\"tipo\":\"VALOR\",\"descripcion\":\"VALOR\",\"generatedImageUrl\":\"PENDIENTE\"}[/LEAD_COMPLETE]\n\n\"¡Listo! Hemos registrado su solicitud. Un asesor de Reyna le contactará a la brevedad. ¡Muchas gracias!\"\n\n**IMPORTANTE:** Escribe siempre \"generatedImageUrl\":\"PENDIENTE\" — el sistema lo reemplaza automáticamente.\n\n---\n\n## CASOS ESPECIALES\n\n### Si el render falló (CRÍTICO — leer historial)\n\nSi en tu historial reciente, tu propio mensaje (el bot) contiene \"Tuve un inconveniente generando la visualización\" o \"podemos cotizar perfectamente\", **el render falló**. NO emitas otro [RENDER_REQUEST]. NO pidas otra descripción del mueble (ya la tienes del Paso 2). Avanza directo al Paso 5 para recopilar los datos restantes.\n\n### Si el cliente describe algo fuera de carpintería\n\"Mi especialidad es el diseño de muebles de carpintería fina. ¿Tiene algo de ese tipo en mente?\"\nNO emitas [RENDER_REQUEST] ni [LEAD_PARTIAL].\n\n### Si el cliente quiere volver al menú\n\"Por supuesto, le regreso al menú principal.\"\n[BACK_TO_RECEPCIONISTA]\n\n### Si el cliente pide hablar con una persona\n\"Con gusto, le conecto con uno de nuestros asesores.\"\n[HUMAN_HANDOFF]\n\n---\n\n## TAGS QUE PUEDES EMITIR\n\n- [LEAD_PARTIAL]{json acumulado}[/LEAD_PARTIAL] — cada vez que recibas un dato nuevo en Pasos 2 y 5. JSON debe tener TODOS los datos acumulados.\n- [RENDER_REQUEST]descripción[/RENDER_REQUEST] — solo en Paso 2 y Paso 4 (iteración).\n- [LEAD_COMPLETE]{json completo}[/LEAD_COMPLETE] — solo en Paso 6, cuando ya tienes los 5 datos.\n- [HUMAN_HANDOFF] — escalado a humano.\n- [BACK_TO_RECEPCIONISTA] — regresar al menú.\n\n**Nunca** emitas un tag a medias o malformado. Si emites [LEAD_PARTIAL] con JSON inválido, perdemos los datos del cliente."
+        }
+      },
+      "id": "f75f9da6-611a-4da3-afca-fd8858721ac3",
+      "name": "Asistente Diseñador",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -5232,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.6
+        }
+      },
+      "id": "0ac75446-fae2-4673-9ce9-d8b52820caa4",
+      "name": "Google Gemini Model Diseñador",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -5232,
+        512
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "yfmGPBVirCA6i7JY",
+          "name": "Google Gemini(PaLM) Api account"
+        }
       }
     },
     {
-      "id": "cta-cotizar-001",
-      "name": "CTA Cotizar",
-      "type": "n8n-nodes-base.whatsApp",
-      "typeVersion": 1.1,
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Resolver Mode').item.json.designerSessionId }}",
+        "contextWindowLength": 8
+      },
+      "id": "2fc348de-e226-478b-9a3c-774ea1b1224a",
+      "name": "Memory Diseñador",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
       "position": [
-        1024,
-        112
-      ],
+        -5104,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-render-01",
+              "leftValue": "={{ $json.renderRequest }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2d23da14-184c-4233-a535-68d9af2f5484",
+      "name": "¿Render?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -3536,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const MAX_RENDERS = 2;\nconst phone = $json.phoneNumber || '';\nconst desc = ($json.descriptionFurniture || '').toLowerCase();\n\n// Categorías permitidas\nconst ALLOWED = /cocina|closet|vestidor|bar|plafon|puerta|mueble|tv|lavaneta|carpinteria|repisa|alacena|isla|cajon|melamina|madera|gabinete|armario|vitrina|biblioteca/;\n\n// Términos bloqueados\nconst BLOCKED = /pornograf|sex|desnud|arma|droga|coche|carro|persona|gente|retrato|cara|rostro|auto|vehiculo|animal|mascota/;\n\n// Leer contador de renders del staticData\nconst renderData = $getWorkflowStaticData('global').renderData || {};\nconst clientData = renderData[phone] || { renderCount: 0 };\n\nconst isBlocked = BLOCKED.test(desc);\nconst isAllowed = ALLOWED.test(desc);\nconst overLimit = clientData.renderCount >= MAX_RENDERS;\n\nconst validRender = !isBlocked && isAllowed && !overLimit;\n\nreturn {\n  ...$json,\n  validRender,\n  renderCount: clientData.renderCount,\n  bypassReason: isBlocked ? 'blocked_content' : (!isAllowed ? 'not_furniture' : (overLimit ? 'limit_reached' : null))\n};"
+      },
+      "id": "9c9a757d-dba7-48cb-8c86-f373ebcb2694",
+      "name": "Validar Tema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1248,
+        720
+      ]
+    },
+    {
       "parameters": {
         "operation": "send",
         "phoneNumberId": "1103955202801675",
-        "recipientPhoneNumber": "={{ $json.phoneNumber }}",
-        "textBody": "¿Te gustaría cotizar un proyecto así para tu hogar? ¡Cuéntanos más! ✍️ Escribe *4* y con gusto te ayudamos. 🪵",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "textBody": "⏳ Generando tu diseño personalizado... Dame unos segundos 🎨",
         "additionalFields": {}
       },
+      "id": "d2077a9e-40d7-4e0f-add8-9f4dec0a09e5",
+      "name": "Responder WA Generando",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        720
+      ],
+      "webhookId": "7cadb797-9b6f-4baf-a390-31050fb9d9e2",
       "credentials": {
         "whatsAppApi": {
           "id": "31KQwk1oC1jrRM1z",
           "name": "WhatsApp account"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const desc = $json.descriptionFurniture || '';\nconst prompt = `Genera UNA imagen fotorrealista de un mueble fabricado por Reyna Cocinas y Carpinterías Finas (Monterrey, México), 37 años de oficio en carpintería fina.\\n\\nMueble solicitado por el cliente: \"${desc}\"\\n\\nUsa las imágenes de referencia adjuntas como guía de estilo, materiales (melamina, madera natural, herrajes finos), acabados, iluminación cálida, composición de catálogo y nivel de detalle.\\n\\nREGLAS ESTRICTAS:\\n- Solo muebles fijos a medida (cocinas, closets, vestidores, bares, plafones, puertas, muebles de TV, lavanetas).\\n- Sin personas, sin texto sobreimpreso, sin marcas de agua.\\n- Iluminación cálida tono 3000K, fondo neutro tono crema o gris claro.\\n- Composición centrada, tipo catálogo de carpintería profesional.`;\nreturn { ...$json, geminiPrompt: prompt };"
+      },
+      "id": "b0e7baa9-ff51-46a3-a742-2b26b6502f6f",
+      "name": "Preparar Prompt Render",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({contents:[{parts:[{text:$json.geminiPrompt},...($json.referenceParts||[])]}],generationConfig:{responseModalities:[\"IMAGE\",\"TEXT\"]},safetySettings:[{category:\"HARM_CATEGORY_SEXUALLY_EXPLICIT\",threshold:\"BLOCK_MEDIUM_AND_ABOVE\"},{category:\"HARM_CATEGORY_DANGEROUS_CONTENT\",threshold:\"BLOCK_MEDIUM_AND_ABOVE\"},{category:\"HARM_CATEGORY_HATE_SPEECH\",threshold:\"BLOCK_MEDIUM_AND_ABOVE\"},{category:\"HARM_CATEGORY_HARASSMENT\",threshold:\"BLOCK_MEDIUM_AND_ABOVE\"}]}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "86d281a9-c9a8-4085-a9ab-b3cf72163951",
+      "name": "Llamar Gemini Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        720
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "dfosELug73LvYyOO",
+          "name": "Query Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const prev = $('Preparar Prompt Render').item.json;\nconst parts = $input.item.json.candidates?.[0]?.content?.parts || [];\nconst imagePart = parts.find(p => p.inlineData?.mimeType?.startsWith('image/'));\n\nif (!imagePart) {\n  // Gemini bloqueó o falló — bypass\n  return { ...prev, renderFailed: true, base64Image: null };\n}\n\nreturn {\n  ...prev,\n  renderFailed: false,\n  base64Image: imagePart.inlineData.data,\n  mimeType: imagePart.inlineData.mimeType\n};"
+      },
+      "id": "d0ec5cc7-0eeb-41cd-9991-c2771d9affba",
+      "name": "Extraer Imagen Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dqxjg4qlb/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "=data:{{ $json.mimeType }};base64,{{ $json.base64Image }}"
+            },
+            {
+              "name": "upload_preset",
+              "value": "reyna_renders"
+            },
+            {
+              "name": "public_id",
+              "value": "={{ $json.phoneNumber }}_{{ Date.now() }}"
+            },
+            {
+              "name": "folder",
+              "value": "reyna_renders"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bb68d1ce-df4e-4b87-adc1-f60ade8362fa",
+      "name": "Subir Render a Cloudinary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const phone = $json.phoneNumber;\nconst cloudinaryUrl = $json.secure_url;\nconst desc = $json.descriptionFurniture;\nconst top3Refs = $json.top3Refs || '';\nconst categoria = $json.top3?.[0]?.categoria || '';\n\n// Actualizar staticData\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.renderData) staticData.renderData = {};\nif (!staticData.renderData[phone]) staticData.renderData[phone] = { renderCount: 0 };\nstaticData.renderData[phone].renderCount += 1;\nstaticData.renderData[phone].generatedImageUrl = cloudinaryUrl;\nstaticData.renderData[phone].lastDescription = desc;\n\nreturn {\n  ...$json,\n  generatedImageUrl: cloudinaryUrl,\n  renderCount: staticData.renderData[phone].renderCount\n};"
+      },
+      "id": "dc18102a-90e2-463d-b63e-70605b60e354",
+      "name": "Guardar URL Render",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Renders",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ new Date().toISOString() }}",
+            "telefono": "={{ $json.phoneNumber }}",
+            "descripcion": "={{ $json.descriptionFurniture }}",
+            "cloudinary_url": "={{ $json.generatedImageUrl }}",
+            "categoria_inferida": "={{ $json.top3?.[0]?.categoria || '' }}",
+            "top_3_referencias": "={{ $json.top3Refs || '' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "a04de7ff-0969-464c-aa9c-4f29be14a95d",
+      "name": "Append Sheet Renders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        960,
+        720
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "messageType": "image",
+        "mediaLink": "={{ $json.generatedImageUrl }}",
+        "additionalFields": {}
+      },
+      "id": "979b8101-c7c0-4a9f-96c4-2772e9349264",
+      "name": "Enviar Imagen Render",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        720
+      ],
+      "webhookId": "render-img-wa-001",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-valid-render",
+              "leftValue": "={{ $json.validRender }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "febcd4b6-c096-45a4-9e22-629d67f78fdb",
+      "name": "¿Render Válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "textBody": "={{ $json.bypassReason === 'blocked_content' ? 'No puedo generar ese tipo de contenido. ¿Me describe un mueble de carpintería?' : $json.bypassReason === 'not_furniture' ? 'Mi especialidad son muebles de carpintería fina (cocinas, closets, bares, plafones, puertas, muebles de TV). ¿Tiene algo así en mente?' : $json.bypassReason === 'limit_reached' ? 'Ya generamos 2 versiones del diseño. Continuemos con su cotización. ¿Cuál es su nombre completo?' : 'Continuemos con su cotización. ¿Cuál es su nombre?' }}",
+        "additionalFields": {}
+      },
+      "id": "ad306e5f-4501-4c8d-b1d5-45cbd328850a",
+      "name": "Responder WA Bypass",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        880
+      ],
+      "webhookId": "498ea082-37b5-4ec5-bb5b-ec3818e099e6",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-render-ok",
+              "leftValue": "={{ $json.renderFailed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ccd9c268-5ee8-46c0-aa7f-7dc5e5fca938",
+      "name": "¿Render OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        416,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1103955202801675",
+        "recipientPhoneNumber": "={{ $('Extract Message').item.json.phoneNumber }}",
+        "textBody": "Tuve un inconveniente generando la visualización, pero podemos cotizar perfectamente. ¿Me dice su nombre completo?",
+        "additionalFields": {}
+      },
+      "id": "c4618908-e361-4952-a097-5b099819d04a",
+      "name": "Responder WA Render Falló",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        416,
+        880
+      ],
+      "webhookId": "6988462b-1f65-4f08-9310-960a98f51d4a",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "31KQwk1oC1jrRM1z",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const REF_URLS = [\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935289/Vestidores__eju7zq.avif',\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935287/Vestidores_tgu8y1.avif',\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935282/mdtv_bsu7rc.avif',\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935275/Cocina_moderna_rdd4xb.avif',\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935273/Cocina_Madera_pz2rcf.avif',\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935263/bares__bwkutc.avif',\n  'https://res.cloudinary.com/dqxjg4qlb/image/upload/f_jpg,q_85,w_1024/v1777935261/Bares_ex6ajd.avif'\n];\nreturn { ...$json, refUrls: REF_URLS };"
+      },
+      "id": "95548046-e508-4005-9fd0-0b6c9269516b",
+      "name": "Descargar Referencias Estilo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const baseItem = $input.first()?.json || {};\nconst refs = baseItem.refUrls || [];\nreturn refs.map((url, i) => ({\n  json: { ...baseItem, refUrl: url, refIndex: i, refCount: refs.length }\n}));"
+      },
+      "id": "dcc260ad-ae2c-409c-9a63-0424aa0f7c7a",
+      "name": "Split URLs Referencia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.refUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "a591f48a-8476-4e71-96f4-d08ed7e39f0f",
+      "name": "Fetch Imagen Referencia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -368,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Debug: ver qué hay realmente en $binary\nconst allBinaryKeys = Object.keys($binary || {});\nconst binDescriptor = $binary?.data;\nconst binDataValue = binDescriptor?.data;\nconst binMimeType = binDescriptor?.mimeType;\n\n// Si hay data, usarla; si no, marcar debug\nif (binDataValue) {\n  return {\n    ...$json,\n    refMimeType: binMimeType || 'image/jpeg',\n    refBase64: binDataValue\n  };\n} else {\n  // Loguear para diagnóstico\n  return {\n    ...$json,\n    refMimeType: binMimeType || 'image/jpeg',\n    refBase64: null,\n    _debugBinaryKeys: allBinaryKeys,\n    _debugBinDescriptor: JSON.stringify(binDescriptor)\n  };\n}"
+      },
+      "id": "a6bc6316-0f86-4455-9236-76d132d6651e",
+      "name": "Encode a Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n// Validar Tema preserva descriptionFurniture via ...spread\nconst origin = $('Validar Tema').first().json;\nconst refs = items\n  .map(i => i.json)\n  .filter(j => j.refBase64)\n  .map(j => ({ inline_data: { mime_type: j.refMimeType, data: j.refBase64 } }));\nreturn [{\n  json: {\n    ...origin,\n    referenceParts: refs,\n    refCountLoaded: refs.length\n  }\n}];"
+      },
+      "id": "da9aee87-03e2-4af4-b9e8-25b2dafa1304",
+      "name": "Agrupar Referencias",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const u = $json.upsertParcial || {};\nreturn { json: { ...u } };"
+      },
+      "id": "433db48e-98e3-412f-8bc3-56be55c9bf40",
+      "name": "Aplanar Upsert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3200,
+        400
+      ]
     }
   ],
+  "pinData": {},
   "connections": {
     "WhatsApp Trigger": {
       "main": [
@@ -1394,7 +1891,7 @@
       "main": [
         [
           {
-            "node": "Sheets - Parcial",
+            "node": "Aplanar Upsert",
             "type": "main",
             "index": 0
           }
@@ -1463,7 +1960,7 @@
         ],
         [
           {
-            "node": "Lookup Lead",
+            "node": "Resolver Mode",
             "type": "main",
             "index": 0
           }
@@ -1569,7 +2066,7 @@
       "main": [
         [
           {
-            "node": "¿Galería?",
+            "node": "¿Render?",
             "type": "main",
             "index": 0
           }
@@ -1627,22 +2124,270 @@
         ]
       ]
     },
-    "Enviar Imagen Galería": {
+    "Resolver Mode": {
       "main": [
         [
           {
-            "node": "Consolidar CTA",
+            "node": "¿inDesignerMode?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Consolidar CTA": {
+    "¿inDesignerMode?": {
       "main": [
         [
           {
-            "node": "CTA Cotizar",
+            "node": "Asistente Diseñador",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente Diseñador": {
+      "main": [
+        [
+          {
+            "node": "Detect Lead Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model Diseñador": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente Diseñador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Diseñador": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente Diseñador",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Render?": {
+      "main": [
+        [
+          {
+            "node": "Validar Tema",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Galería?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Prompt Render": {
+      "main": [
+        [
+          {
+            "node": "Llamar Gemini Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Gemini Image": {
+      "main": [
+        [
+          {
+            "node": "Extraer Imagen Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir Render a Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Guardar URL Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar URL Render": {
+      "main": [
+        [
+          {
+            "node": "Append Sheet Renders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Sheet Renders": {
+      "main": [
+        [
+          {
+            "node": "Enviar Imagen Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Tema": {
+      "main": [
+        [
+          {
+            "node": "¿Render Válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Render Válido?": {
+      "main": [
+        [
+          {
+            "node": "Responder WA Generando",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder WA Bypass",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder WA Generando": {
+      "main": [
+        [
+          {
+            "node": "Descargar Referencias Estilo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Referencias Estilo": {
+      "main": [
+        [
+          {
+            "node": "Split URLs Referencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs Referencia": {
+      "main": [
+        [
+          {
+            "node": "Fetch Imagen Referencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Imagen Referencia": {
+      "main": [
+        [
+          {
+            "node": "Encode a Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encode a Base64": {
+      "main": [
+        [
+          {
+            "node": "Agrupar Referencias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar Referencias": {
+      "main": [
+        [
+          {
+            "node": "Preparar Prompt Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Imagen Base64": {
+      "main": [
+        [
+          {
+            "node": "¿Render OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Render OK?": {
+      "main": [
+        [
+          {
+            "node": "Subir Render a Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder WA Render Falló",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aplanar Upsert": {
+      "main": [
+        [
+          {
+            "node": "Sheets - Parcial",
             "type": "main",
             "index": 0
           }
@@ -1650,33 +2395,17 @@
       ]
     }
   },
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "staticData": {
-    "global": {
-      "resetEpochs": {
-        "5218112817608": 1777846949774
-      },
-      "humanMode": {},
-      "humanModeAt": {},
-      "history": {
-        "5218112817608": [
-          "U: Hola",
-          "B: ¡Hola! 👋 Soy el asistente virtual de Reyna, carpintería fina con 37 años creando piezas a medida en Monterrey. ¿Qué te gustaría conocer hoy? 1️⃣ Cocinas 2️⃣ Closets y Vestidores 3️⃣ Bares 4️⃣ Cotizar mi proyecto 5️⃣ Hablar con un asesor 6️⃣ Ven a visitarnos",
-          "U: 6",
-          "B: 📍 Estamos en *Loma Alta #220, Col. Loma Larga, Monterrey, N.L.* ¡Te esperamos! https://maps.app.goo.gl/Sd2SoKK48GWKehyN7"
-        ]
-      },
-      "partialLeads": {
-        "5218112817608": {}
-      }
-    }
+  "versionId": "f8db1339-f6d6-407a-b518-c9fc90939d87",
+  "meta": {
+    "instanceId": "ed753031efe2fb121206b75a4d94ee9275cc0586c9f54300749965ae24fb6b38"
   },
-  "pinData": {},
-  "meta": null,
+  "id": "ar3Ea99IYmhmtmAq",
   "tags": [
     {
       "updatedAt": "2026-05-03T17:49:38.076Z",
@@ -1684,6 +2413,5 @@
       "id": "a12wMHATcN8PKbrb",
       "name": "REYNA"
     }
-  ],
-  "active": true
+  ]
 }
