@@ -1,10 +1,16 @@
 {
   "name": "REYNA — Limpiador de Leads",
-  "active": true,
   "nodes": [
     {
       "parameters": {
-        "rule": {"interval": [{"field": "minutes", "minutesInterval": 30}]}
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
       },
       "id": "bbfbe35c-692a-4cdf-9797-ca08119d5a71",
       "name": "Cron cada 30 min",
@@ -25,7 +31,12 @@
       "typeVersion": 4.2,
       "position": [224, 0],
       "alwaysOutputData": true,
-      "credentials": {"googleSheetsOAuth2Api": {"id": "F5ulUZ2Ax6X8HpPv", "name": "Google Sheets account 2"}},
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -41,8 +52,18 @@
     {
       "parameters": {
         "operation": "appendOrUpdate",
-        "documentId": {"__rl": true, "value": "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c", "mode": "id"},
-        "sheetName": {"__rl": true, "value": 1001783326, "mode": "list", "cachedResultName": "Reyna - Base de datos", "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/edit#gid=1001783326"},
+        "documentId": {
+          "__rl": true,
+          "value": "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001783326,
+          "mode": "list",
+          "cachedResultName": "Reyna - Base de datos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c/edit#gid=1001783326"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -54,15 +75,15 @@
           },
           "matchingColumns": ["Teléfono"],
           "schema": [
-            {"id": "Teléfono", "displayName": "Teléfono", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true},
-            {"id": "Nombre", "displayName": "Nombre", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "Email", "displayName": "Email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "Proyecto", "displayName": "Proyecto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "Presupuesto", "displayName": "Presupuesto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "Estado", "displayName": "Estado", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
-            {"id": "Última Interacción", "displayName": "Última Interacción", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true},
-            {"id": "Transcripción", "displayName": "Transcripción", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "Timestamp", "displayName": "Timestamp", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true}
+            { "id": "Teléfono", "displayName": "Teléfono", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Nombre", "displayName": "Nombre", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Email", "displayName": "Email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Proyecto", "displayName": "Proyecto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Presupuesto", "displayName": "Presupuesto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Estado", "displayName": "Estado", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Última Interacción", "displayName": "Última Interacción", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Transcripción", "displayName": "Transcripción", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false },
+            { "id": "Timestamp", "displayName": "Timestamp", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
@@ -74,17 +95,25 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [672, 0],
-      "credentials": {"googleSheetsOAuth2Api": {"id": "F5ulUZ2Ax6X8HpPv", "name": "Google Sheets account 2"}}
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "F5ulUZ2Ax6X8HpPv",
+          "name": "Google Sheets account 2"
+        }
+      }
     }
   ],
   "connections": {
-    "Cron cada 30 min": {"main": [[{"node": "Leer Lead Log", "type": "main", "index": 0}]]},
-    "Leer Lead Log": {"main": [[{"node": "Detectar Abandonados", "type": "main", "index": 0}]]},
-    "Detectar Abandonados": {"main": [[{"node": "Marcar No Completó", "type": "main", "index": 0}]]}
+    "Cron cada 30 min": { "main": [[{ "node": "Leer Lead Log", "type": "main", "index": 0 }]] },
+    "Leer Lead Log": { "main": [[{ "node": "Detectar Abandonados", "type": "main", "index": 0 }]] },
+    "Detectar Abandonados": { "main": [[{ "node": "Marcar No Completó", "type": "main", "index": 0 }]] }
   },
-  "settings": {"executionOrder": "v1", "callerPolicy": "workflowsFromSameOwner", "availableInMCP": false},
-  "staticData": {"node:Cron cada 30 min": {"recurrenceRules": []}},
-  "meta": null,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
   "pinData": {},
-  "tags": [{"name": "REYNA"}]
+  "meta": null
 }
