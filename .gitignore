@@ -1,0 +1,26 @@
+# Carpetas / archivos no versionables
+Prompt generico - AI/
+REYNA_assets/
+
+# Drive shortcuts y binarios pesados
+*.gsheet
+*.gdoc
+*.gslides
+*.gdraw
+desktop.ini
+.DS_Store
+
+# Multimedia (vive en Cloudinary, no en repo)
+**/Videos/
+**/Multimedia/
+
+# Editor / sistema
+.env
+.env.local
+.env.*.local
+node_modules/
+*.log
+.claude/
+
+# Vacíos / legacy a triar manualmente
+**/ARRANCAR A TRABAJAR.txt

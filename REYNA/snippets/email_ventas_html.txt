@@ -1,0 +1,147 @@
+<!--
+  Campo: message (body) del nodo Gmail "Email a Ventas"
+  Tipo: expresión n8n (pegar como expresión, incluyendo el ={{ }})
+
+  Campo Subject (pegar como expresión):
+  =🪵 Lead Reyna - {{ $json.leadData?.nombre || 'Nuevo contacto' }}
+-->
+
+={{ (() => {
+  const nombre        = $json.leadData?.nombre || 'Sin nombre';
+  const email         = $json.leadData?.email || 'Sin email';
+  const presupuesto   = $json.leadData?.presupuesto || 'No indicado';
+  const tipo          = $json.leadData?.tipo || 'No especificado';
+  const descripcion   = $json.leadData?.descripcion || 'Sin descripción';
+  const imageUrl      = $json.leadData?.generatedImageUrl || null;
+  const phone         = $json.phoneNumber || 'Desconocido';
+
+  const renderBlock = imageUrl ? `
+    <tr>
+      <td style="padding: 0 30px 24px 30px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9f5f0; border-radius:8px; padding:20px;">
+          <tr>
+            <td style="padding-bottom:12px;">
+              <p style="margin:0; font-family:Arial,sans-serif; font-size:14px; font-weight:bold; color:#5c3d1e;">
+                🎨 Diseño generado por IA
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align:center; padding-bottom:12px;">
+              <img src="${imageUrl}" alt="Render del mueble" style="max-width:100%; max-height:400px; border-radius:6px; border:2px solid #d4a96a;" />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p style="margin:0; font-family:Arial,sans-serif; font-size:13px; color:#666;">
+                <strong>Descripción usada para el render:</strong><br>${descripcion}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  ` : '';
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lead Reyna</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f4; padding:30px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:#3b1f0a; padding:28px 30px; text-align:center;">
+              <p style="margin:0; font-size:22px; font-weight:bold; color:#d4a96a; letter-spacing:1px;">
+                🪵 Reyna Cocinas y Carpinterías Finas
+              </p>
+              <p style="margin:6px 0 0 0; font-size:13px; color:#b8986a;">
+                Monterrey, México · 37 años de trayectoria
+              </p>
+            </td>
+          </tr>
+
+          <!-- TÍTULO -->
+          <tr>
+            <td style="padding:28px 30px 16px 30px;">
+              <p style="margin:0; font-size:18px; font-weight:bold; color:#3b1f0a;">
+                Nuevo lead recibido via WhatsApp
+              </p>
+              <p style="margin:6px 0 0 0; font-size:13px; color:#999;">
+                Este contacto fue capturado automáticamente por el bot de Reyna.
+              </p>
+            </td>
+          </tr>
+
+          <!-- DATOS DEL LEAD -->
+          <tr>
+            <td style="padding:0 30px 24px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e8e0d5; border-radius:8px; overflow:hidden;">
+                <tr style="background:#fdf8f3;">
+                  <td style="padding:14px 20px; font-size:13px; color:#888; width:40%; font-weight:bold; border-bottom:1px solid #e8e0d5;">Nombre</td>
+                  <td style="padding:14px 20px; font-size:14px; color:#222; border-bottom:1px solid #e8e0d5;">${nombre}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px; font-size:13px; color:#888; font-weight:bold; border-bottom:1px solid #e8e0d5;">Email</td>
+                  <td style="padding:14px 20px; font-size:14px; color:#222; border-bottom:1px solid #e8e0d5;">
+                    <a href="mailto:${email}" style="color:#5c3d1e;">${email}</a>
+                  </td>
+                </tr>
+                <tr style="background:#fdf8f3;">
+                  <td style="padding:14px 20px; font-size:13px; color:#888; font-weight:bold; border-bottom:1px solid #e8e0d5;">WhatsApp</td>
+                  <td style="padding:14px 20px; font-size:14px; color:#222; border-bottom:1px solid #e8e0d5;">+${phone}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px; font-size:13px; color:#888; font-weight:bold; border-bottom:1px solid #e8e0d5;">Tipo de mueble</td>
+                  <td style="padding:14px 20px; font-size:14px; color:#222; border-bottom:1px solid #e8e0d5;">${tipo}</td>
+                </tr>
+                <tr style="background:#fdf8f3;">
+                  <td style="padding:14px 20px; font-size:13px; color:#888; font-weight:bold; border-bottom:1px solid #e8e0d5;">Presupuesto</td>
+                  <td style="padding:14px 20px; font-size:14px; color:#222; border-bottom:1px solid #e8e0d5;">${presupuesto}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px; font-size:13px; color:#888; font-weight:bold; vertical-align:top;">Descripción</td>
+                  <td style="padding:14px 20px; font-size:14px; color:#222; line-height:1.5;">${descripcion}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- BLOQUE RENDER (condicional) -->
+          ${renderBlock}
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 30px 28px 30px; text-align:center;">
+              <a href="https://wa.me/${phone}" style="display:inline-block; background:#25d366; color:#ffffff; font-size:14px; font-weight:bold; text-decoration:none; padding:12px 28px; border-radius:6px;">
+                💬 Responder por WhatsApp
+              </a>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f9f9f9; border-top:1px solid #e8e0d5; padding:18px 30px; text-align:center;">
+              <p style="margin:0; font-size:12px; color:#aaa;">
+                Est Studio — Sistema automatizado de captación de leads
+              </p>
+              <p style="margin:4px 0 0 0; font-size:11px; color:#ccc;">
+                Este mensaje fue generado automáticamente. No responda a este email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+})() }}
