@@ -3,30 +3,31 @@
 Bot de calificación de leads para **Reyna Cocinas y Carpinterías Finas** (Monterrey, [dreina.com](https://www.dreina.com)). Clonado del bot de BIPOLAR el 2026-05-03 y adaptado al negocio de carpintería fina.
 
 ## Estado actual
-🟢 **ACTIVO en pruebas** — v0.12. Casos E2E 3 y 5 PASA. 4 bugs adicionales corregidos en sesión de pruebas. MAX_RENDERS bajado a 2 (~$1.50 MXN/cliente). Cliente Calificado ahora usa bypass determinista (no LLM) → respuesta consistente y fila no se degrada.
+🟢 **ACTIVO en pruebas** — v0.13. Demo lista para cliente. Chatwoot integración E2E funcionando (handoff + toggle Resolve/Reopen + log mensajes en pausa). Catálogo embeddings eliminado (era código muerto). Sheet rebrand: columna WhatsApp clickeable. Email sin footer EST STUDIO. Cierre automático tras 2do render.
 
-### Dónde nos quedamos (sesión 2026-05-06 noche)
+### Dónde nos quedamos (sesión 2026-05-07 mañana)
 
-✅ Caso 3 PASA — render → "2" (Cotizar) → lead capturado correctamente, Sheet `Renders` con teléfono y descripción
-✅ Caso 5 PASA — cliente Calificado saludado por nombre con proyecto previo, NO menú, fila no se degrada
-🟡 Caso 4 PARCIAL — LLM filtra contenido sensible antes del logger (comportamiento OK, no bloqueante)
-✅ Bug `Renders` sin teléfono → fix en `Guardar URL Render` leyendo desde `Buscar Top-3 Catálogo`
-✅ Bug Diseñador interpretaba "2" como nuevo render → fix prompt PASO 3.1 con regla crítica
-✅ Bug cliente Calificado degradado a Nuevo → nuevo nodo `Respuesta Cliente Calificado` + flag `isCalificadoBypass` en `Detect Lead Complete`
-✅ MAX_RENDERS: 3 → 2
+✅ Chatwoot handoff funciona E2E (cliente → bot → handoff → Chatwoot → agente responde → llega a WA)
+✅ Toggle bot ON/OFF vía Resolve/Reopen en Chatwoot (sin slash commands)
+✅ Mensajes del cliente en pausa se postean a la conversación abierta de Chatwoot (lookup automático)
+✅ Eliminado nodo `Responder En Atención` — bot no manda mensaje auto cuando humano atiende
+✅ Catálogo embeddings eliminado (4 nodos retirados, era código muerto: URLs en texto que Gemini no leía)
+✅ Sheet `Base de datos`: nueva columna B `WhatsApp` clickeable (HYPERLINK a wa.me/)
+✅ Email a Ventas: removido footer EST STUDIO
+✅ Detect Lead Complete: detecta Nombre/Email en tiempo real → Sheet se llena conforme cliente responde
+✅ Bug 2do render-menú redundante: ahora tras render #2 va directo a "¿Cuál es su nombre completo?"
+✅ Re-validados Caso 3 y Caso 5
 
-⏸️ **Pendiente para mañana** (en orden):
-1. Caso 8 — `/reset` borra estado (verificación rápida)
-2. Caso 2 — Diseñador con 2 renders + ajustes (probar flujo completo con MAX_RENDERS=2)
-3. Caso 1 — Galería submenú 4 categorías
-4. Caso 5b — Cliente nuevo con Proyecto pre-llenado
-5. Caso 7 — Limpiador 8h
-6. Caso 9 — Estado Calificado persiste tras cron
-7. Watermark / logo en renders (deferred — funciona sin él)
-8. Limpiar headers extra en Sheet `Renders` (residuos `type, etag, secure_url, etc.`)
-9. Eliminar `/reset` de `Extract Message` antes de producción
-10. Desactivar Bipolar webhook → activar Reyna (orden: Bot → Limpiador → Bridge)
-11. Validar visualmente email a ventas con lead real
+⏸️ **Pendiente** (en orden):
+1. Caso 8 — `/reset` borra estado
+2. Caso 2 — Diseñador con 2 renders + ajustes (validar nuevo cierre auto post-2do-render)
+3. Caso 1 — Galería submenú
+4. Caso 5b, Caso 7, Caso 9
+5. Borrar pestaña `Catalogo` del Sheet manualmente
+6. Watermark / logo en renders (deferred)
+7. Eliminar `/reset` de `Extract Message` antes de producción
+8. Desactivar Bipolar webhook si Reyna se queda con número propio (actualmente comparten)
+9. Demo al cliente
 
 | Workflow | n8n ID | Estado |
 |----------|--------|--------|

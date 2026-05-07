@@ -2,6 +2,75 @@
 
 > Este CHANGELOG cubre cambios **propios** de Reyna. Para divergencias respecto al snapshot inicial de Bipolar, ver [CHANGELOG_FROM_BIPOLAR.md](CHANGELOG_FROM_BIPOLAR.md).
 
+## v0.13 — 2026-05-07 — Chatwoot integración E2E + limpieza catálogo muerto + Sheet rebrand + cierre auto post-2do-render
+
+Sesión de pruebas E2E + Chatwoot. Demo lista para cliente. Cambios mayores: Chatwoot self-hosted vinculado, catálogo embeddings eliminado (era código muerto), Sheet rediseñado (columna WhatsApp clickeable), email rebrand, cierre automático tras 2do render.
+
+### Chatwoot — handoff humano completo
+
+- **Chatwoot existente** (`chatwoot.est-studio.co`, inbox 1) compartido con Bipolar — un solo Bridge maneja ambos clientes (filtra por inbox).
+- **Handoff WhatsApp → Chatwoot**: el bot ya tenía configurada la cadena `Prep Handoff → Crear Contacto → Buscar Contacto → Crear Conversación → Enviar Historial → Responder WA Handoff`. Verificada E2E.
+- **Bridge Chatwoot → WhatsApp** (BIPOLAR Bridge, activo): cuando agente responde en Chatwoot, mensaje llega al cliente.
+- **Toggle Bot ON/OFF vía Resolve/Reopen** (nuevo):
+  - Bridge `Filtrar Mensaje Agente` ahora detecta evento `conversation_status_changed` con `status === 'resolved'` → llama `bot-resume` webhook → limpia `humanMode[phone]`.
+  - Cliente vuelve a escribir → conversación se reabre auto y bot atiende.
+  - Requiere marcar evento "Conversation Status Changed" en Chatwoot Settings → Webhooks.
+- **Log de mensajes en pausa**:
+  - Cuando `humanMode=true` y cliente escribe, el mensaje se postea a Chatwoot como `incoming` en la conversación abierta del cliente.
+  - Lookup automático: `CW Pausa - Buscar Contacto → Buscar Conv → Resolve ConvId → Log Cliente Pausa` (con `onError: continueRegularOutput` para no romper el flujo si Chatwoot falla).
+  - **Eliminado nodo `Responder En Atención`** — bot ya no manda mensaje "ya lo atiende un humano" automático (UX requerida por cliente).
+
+### Limpieza catálogo embeddings (código muerto)
+
+Hallazgo crítico: la cadena RAG (`Generar Embedding Descripción → Extraer Embedding → Leer Catalogo Render → Buscar Top-3 Catálogo`) producía las top-3 URLs de Cloudinary, pero `Llamar Gemini Image` solo enviaba el **texto** del prompt (no `inlineData` con imágenes). Las URLs quedaban en el prompt como texto plano que el modelo no podía visualizar.
+
+- **4 nodos eliminados** del workflow: `Generar Embedding Descripción`, `Extraer Embedding Descripción`, `Leer Catalogo Render`, `Buscar Top-3 Catálogo`.
+- **Conexión directa**: `Responder WA Generando → Preparar Prompt Render → Llamar Gemini Image`.
+- `Preparar Prompt Render` simplificado: usa solo `descriptionFurniture`, sin top3.
+- `Guardar URL Render` y `Append Sheet Renders` actualizados (columnas `categoria_inferida`, `top_3_referencias` retiradas).
+- **Pestaña `Catalogo`** del Sheet → pendiente de borrar manualmente (no rompe nada).
+- Ahorro: ~$0.0001 USD por render (embedding API), ~3s latencia menos.
+- Trade-off documentado: si en el futuro se quiere realmente usar referencias visuales, hay que pasar las imágenes como `inlineData` en `parts` del request a Gemini (Opción B reservada).
+
+### Bug fixes en sesión
+
+1. **Render no llegaba al cliente** — `Append Sheet Renders` falló con error "Column names were updated" porque user renombró `cloudinary_url → Foto` en el Sheet. Mapeo del nodo actualizado a `Foto`. Headers residuales (`type, etag, secure_url, asset_folder, etc.` de iteraciones viejas) limpiados de E1:Z1.
+2. **Cliente en pausa NO veía mensaje en Chatwoot si el handoff fue antes del fix** — convId no estaba guardado en `staticData`. Solución: agregar lookup automático (`CW Pausa - Buscar Contacto → Buscar Conv → Resolve ConvId`) que encuentra la conversación abierta del contacto si no hay convId previo.
+3. **Bug request del cliente: 2do render-menú redundante** — después del render #2 (límite), el sistema seguía mostrando "1 Ajustar / 2 Cotizar" aunque la opción 1 ya no era viable. Fix: nodo `¿Último Render?` (IF con `renderCount >= 2`) → si TRUE, salta el menú post-render y manda directo "Es su última versión disponible. Pasemos a su cotización. ¿Cuál es su nombre completo?". También push a `staticData.history` para que el LLM en siguiente turno tenga contexto.
+4. **Diseñador no escribía Nombre/Email en tiempo real** — `Detect Lead Complete` ahora detecta:
+   - **Email** vía regex `/[\w.+-]+@[\w.-]+\.[\w]{2,}/i` en cualquier mensaje del cliente.
+   - **Nombre** vía heurística: si el último mensaje del bot contiene "nombre|cómo se llama|cuál es su" Y la respuesta del cliente es corta (≤50 chars, sin @, sin números largos) → captura como nombre.
+   - Persiste en `staticData.collectedFields[phone]` (sobrevive turnos, se borra con `/reset`).
+   - `upsertParcial` incluye estos campos siempre, así Sheets - Parcial los escribe cada turno.
+
+### Cambios cosméticos en Sheet `Base de datos`
+
+- **Nueva columna B: `WhatsApp`** — link clickeable "💬 Chat" que abre `https://wa.me/<teléfono>` directo. Implementado vía mapeo de fórmula HYPERLINK en los 3 nodos Sheets (Parcial, Momento 1, Momento 2). Schema actualizado con columna WhatsApp marcada.
+- **Headers reordenados**: A=Teléfono, B=WhatsApp, C=Nombre, D=Email, E=Proyecto, F=Presupuesto, G=Estado, H=Última Interacción, I=Transcripción, J=Timestamp.
+
+### Email a Ventas
+
+- **Removido footer "EST STUDIO — Where AI becomes your professional advantage"** — el correo ahora termina en el botón "Responder por WhatsApp", sin branding del proveedor.
+
+### Casos E2E ejecutados en sesión
+
+- ✅ **Caso 3 PASA** (re-validado).
+- ✅ **Caso 5 PASA** (re-validado tras restaurar fila).
+- ✅ **Caso Chatwoot Handoff PASA** — flujo completo: handoff → conversación en Chatwoot → agente responde → llega a WhatsApp → cliente sigue escribiendo → mensajes aparecen en Chatwoot (no respuesta automática) → Resolve → bot reactiva.
+
+### Pendientes de mañana
+
+- Caso 8 — `/reset` borra estado.
+- Caso 2 — Diseñador con 2 renders + ajustes (probar con MAX_RENDERS=2 + nuevo cierre auto post-2do-render).
+- Caso 1 — Galería submenú.
+- Caso 4 PARCIAL — re-evaluar si vale la pena loggear handoffs de contenido sensible vía LLM además del path original.
+- Caso 5b, Caso 7, Caso 9.
+- Borrar pestaña `Catalogo` del Sheet (manual, click derecho → eliminar).
+- Watermark en renders (deferido).
+- Eliminar `/reset` de `Extract Message` antes de producción.
+
+---
+
 ## v0.12 — 2026-05-06 — E2E Casos 3 y 5 PASA + bypass cliente Calificado determinista + MAX_RENDERS=2
 
 Sesión de pruebas E2E. Validados Casos 3 (1 render + cotizar) y 5 (cliente ya Calificado). Se identificaron y corrigieron 4 bugs adicionales que aparecieron durante las pruebas. Cambio de regla de negocio: límite de renders bajado de 3 a 2 para reducir costo (~$1.50 MXN/cliente vs $2.30).

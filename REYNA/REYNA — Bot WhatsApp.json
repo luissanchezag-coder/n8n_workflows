@@ -71,14 +71,15 @@
                                                          "mappingMode":  "defineBelow",
                                                          "value":  {
                                                                        "TelÃ©fono":  "={{ $json.upsertNuevo[\u0027TelÃ©fono\u0027] }}",
+                                                                       "WhatsApp":  "={{ \u0027=HYPERLINK(\"https://wa.me/\u0027 + $json.upsertNuevo[\u0027TelÃ©fono\u0027] + \u0027\",\"ðŸ’¬ Chat\")\u0027 }}",
                                                                        "Nombre":  "={{ $json.upsertNuevo.Nombre }}",
                                                                        "Email":  "={{ $json.upsertNuevo.Email }}",
+                                                                       "Proyecto":  "={{ $json.upsertNuevo.Proyecto }}",
                                                                        "Presupuesto":  "={{ $json.upsertNuevo.Presupuesto }}",
                                                                        "Estado":  "={{ $json.upsertNuevo.Estado }}",
                                                                        "Ãšltima InteracciÃ³n":  "={{ $json.upsertNuevo[\u0027Ãšltima InteracciÃ³n\u0027] }}",
                                                                        "TranscripciÃ³n":  "={{ $json.upsertNuevo[\u0027TranscripciÃ³n\u0027] }}",
-                                                                       "Timestamp":  "={{ $json.upsertNuevo.Timestamp }}",
-                                                                       "Proyecto":  "={{ $json.upsertNuevo.Proyecto }}"
+                                                                       "Timestamp":  "={{ $json.upsertNuevo.Timestamp }}"
                                                                    },
                                                          "matchingColumns":  [
                                                                                  "TelÃ©fono"
@@ -92,6 +93,16 @@
                                                                             "display":  true,
                                                                             "type":  "string",
                                                                             "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "WhatsApp",
+                                                                            "displayName":  "WhatsApp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  false,
                                                                             "removed":  false
                                                                         },
                                                                         {
@@ -253,7 +264,7 @@
                   },
                   {
                       "parameters":  {
-                                         "jsCode":  "const staticData = $getWorkflowStaticData(\u0027global\u0027);\nconst phoneNumber = $(\u0027Extract Message\u0027).item.json.phoneNumber;\nconst userMsg = $(\u0027Extract Message\u0027).item.json.chatInput;\nconst isReset = $(\u0027Extract Message\u0027).item.json.isReset;\n\n// 1. Obtener texto del agente (Recepcionista o DiseÃ±ador)\nconst rawText = $json.output || $json.text || $json.message || \u0027\u0027;\n\n// 2. Flags de routing\nlet routeDesigner       = false;\nlet renderRequest       = false;\nlet descriptionFurniture = null;\nlet backToRecep         = false;\nlet humanHandoff        = false;\nlet leadComplete        = false;\nlet leadData            = null;\nlet galeriaCocinas      = false;\nlet galeriaClosets      = false;\nlet galeriaBares        = false;\nlet galeriaPlafones     = false;\nlet galeriaPuertas      = false;\nlet galeriaMueblesTV    = false;\nlet galeriaLavanetas    = false;\n\n// 3. Parseo de tags\nif (rawText.includes(\u0027[ROUTE_DESIGNER]\u0027)) {\n  routeDesigner = true;\n  if (!staticData.inDesignerMode) staticData.inDesignerMode = {};\n  if (!staticData.inDesignerModeAt) staticData.inDesignerModeAt = {};\n  staticData.inDesignerMode[phoneNumber] = true;\n  staticData.inDesignerModeAt[phoneNumber] = Date.now();\n}\n\nconst renderMatch = rawText.match(/\\[RENDER_REQUEST\\]([\\s\\S]*?)\\[\\/RENDER_REQUEST\\]/);\nif (renderMatch) {\n  renderRequest = true;\n  descriptionFurniture = renderMatch[1].trim();\n}\n\nif (rawText.includes(\u0027[BACK_TO_RECEPCIONISTA]\u0027)) backToRecep = true;\nif (rawText.includes(\u0027[HUMAN_HANDOFF]\u0027)) humanHandoff = true;\n\nconst leadMatch = rawText.match(/\\[LEAD_COMPLETE\\]([\\s\\S]*?)\\[\\/LEAD_COMPLETE\\]/);\nif (leadMatch) {\n  leadComplete = true;\n  try {\n    leadData = JSON.parse(leadMatch[1].trim());\n    const renderData = staticData.renderData?.[phoneNumber];\n    if (renderData?.generatedImageUrl) {\n      leadData.generatedImageUrl = renderData.generatedImageUrl;\n    } else {\n      leadData.generatedImageUrl = null;\n    }\n  } catch (e) {\n    leadData = { parseError: true, raw: leadMatch[1].trim() };\n  }\n}\n\nif (rawText.includes(\u0027[GALERIA_COCINAS]\u0027))    galeriaCocinas   = true;\nif (rawText.includes(\u0027[GALERIA_CLOSETS]\u0027))    galeriaClosets   = true;\nif (rawText.includes(\u0027[GALERIA_BARES]\u0027))      galeriaBares     = true;\nif (rawText.includes(\u0027[GALERIA_PLAFONES]\u0027))   galeriaPlafones  = true;\nif (rawText.includes(\u0027[GALERIA_PUERTAS]\u0027))    galeriaPuertas   = true;\nif (rawText.includes(\u0027[GALERIA_MUEBLES_TV]\u0027)) galeriaMueblesTV = true;\nif (rawText.includes(\u0027[GALERIA_LAVANETAS]\u0027))  galeriaLavanetas = true;\n\n// 4. TTL inDesignerMode 24h\nconst modeAt = staticData.inDesignerModeAt?.[phoneNumber] || 0;\nif ((Date.now() - modeAt) \u003e 86400000 \u0026\u0026 staticData.inDesignerMode?.[phoneNumber]) {\n  staticData.inDesignerMode[phoneNumber] = false;\n}\n\n// 5. Limpiar inDesignerMode si el DiseÃ±ador cerrÃ³ o transfiriÃ³\nif (leadComplete || humanHandoff || backToRecep) {\n  if (staticData.inDesignerMode) staticData.inDesignerMode[phoneNumber] = false;\n  if (staticData.inDesignerModeAt) delete staticData.inDesignerModeAt[phoneNumber];\n}\n\n// 6. GalerÃ­a: mapa de imÃ¡genes con URLs reales de Cloudinary\nconst GALERIA_IMAGES = {\n  COCINAS:    [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017408/Cocina__gsvwif.jpg\u0027, \u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017407/Cocina_dbrfwf.jpg\u0027],\n  CLOSETS:    [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017405/vestidores_gj5gzs.jpg\u0027],\n  PLAFONES:   [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017375/plafon_s20od3.jpg\u0027],\n  PUERTAS:    [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017375/puerta_kfsuhg.jpg\u0027],\n  MUEBLES_TV: [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017409/muebleTV_szzzva.jpg\u0027],\n  BARES:      [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017403/bares_ryjvei.jpg\u0027],\n  LAVANETAS:  [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017402/lavanetas_x9swji.jpg\u0027]\n};\n\nlet galeria = null;\nlet imagenes = [];\nif (galeriaCocinas)   { galeria = \u0027COCINAS\u0027;    imagenes = GALERIA_IMAGES.COCINAS; }\nif (galeriaClosets)   { galeria = \u0027CLOSETS\u0027;    imagenes = GALERIA_IMAGES.CLOSETS; }\nif (galeriaBares)     { galeria = \u0027BARES\u0027;      imagenes = GALERIA_IMAGES.BARES; }\nif (galeriaPlafones)  { galeria = \u0027PLAFONES\u0027;   imagenes = GALERIA_IMAGES.PLAFONES; }\nif (galeriaPuertas)   { galeria = \u0027PUERTAS\u0027;    imagenes = GALERIA_IMAGES.PUERTAS; }\nif (galeriaMueblesTV) { galeria = \u0027MUEBLES_TV\u0027; imagenes = GALERIA_IMAGES.MUEBLES_TV; }\nif (galeriaLavanetas) { galeria = \u0027LAVANETAS\u0027;  imagenes = GALERIA_IMAGES.LAVANETAS; }\n\n// 7. Limpiar tags del texto visible al cliente\nconst cleanMessage = rawText\n  .replace(/\\[ROUTE_DESIGNER\\]/g, \u0027\u0027)\n  .replace(/\\[RENDER_REQUEST\\][\\s\\S]*?\\[\\/RENDER_REQUEST\\]/g, \u0027\u0027)\n  .replace(/\\[BACK_TO_RECEPCIONISTA\\]/g, \u0027\u0027)\n  .replace(/\\[HUMAN_HANDOFF\\]/g, \u0027\u0027)\n  .replace(/\\[LEAD_COMPLETE\\][\\s\\S]*?\\[\\/LEAD_COMPLETE\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_COCINAS\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_CLOSETS\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_BARES\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_PLAFONES\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_PUERTAS\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_MUEBLES_TV\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_LAVANETAS\\]/g, \u0027\u0027)\n  .trim();\n\n// 8. HistÃ³rico\nif (!staticData.history) staticData.history = {};\nif (isReset) staticData.history[phoneNumber] = [];\nif (!staticData.history[phoneNumber]) staticData.history[phoneNumber] = [];\nconst cleanUser = (userMsg || \u0027\u0027).replace(/\\s+/g, \u0027 \u0027).trim();\nconst cleanBot = (cleanMessage || \u0027\u0027).replace(/\\s+/g, \u0027 \u0027).trim();\nstaticData.history[phoneNumber].push(\u0027U: \u0027 + cleanUser);\nstaticData.history[phoneNumber].push(\u0027B: \u0027 + cleanBot);\nif (staticData.history[phoneNumber].length \u003e 12) staticData.history[phoneNumber] = staticData.history[phoneNumber].slice(-12);\nconst soloUser = staticData.history[phoneNumber].filter(x =\u003e x.startsWith(\u0027U: \u0027)).map(x =\u003e x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(\u0027 | \u0027);\n\nconst now = new Date();\nconst fechaCorta = now.toLocaleString(\u0027es-MX\u0027, { timeZone: \u0027America/Monterrey\u0027, day: \u00272-digit\u0027, month: \u0027short\u0027, year: \u0027numeric\u0027 }).replace(/\\./g, \u0027\u0027);\nconst fechaTimestamp = now.toISOString();\n\nconst isCalificadoBypass = $json.isCalificadoBypass === true;\nconst upsertParcial = (leadComplete || isCalificadoBypass) ? null : {\n  \u0027TelÃ©fono\u0027: phoneNumber,\n  \u0027Estado\u0027: \u0027Nuevo\u0027,\n  \u0027Ãšltima InteracciÃ³n\u0027: fechaCorta,\n  \u0027TranscripciÃ³n\u0027: transcripcion,\n};\n\nreturn [{\n  json: {\n    phoneNumber,\n    cleanMessage,\n    leadComplete,\n    leadData,\n    transcripcion,\n    fechaCorta,\n    fechaTimestamp,\n    upsertParcial,\n    humanHandoff,\n    backToRecep,\n    routeDesigner,\n    renderRequest,\n    descriptionFurniture,\n    galeria,\n    imagenes,\n    sendShowreel: false,\n    senderName: $(\u0027Extract Message\u0027).item.json.senderName,\n    inDesignerMode: staticData.inDesignerMode?.[phoneNumber] === true,\n  }\n}];"
+                                         "jsCode":  "const staticData = $getWorkflowStaticData(\u0027global\u0027);\nconst phoneNumber = $(\u0027Extract Message\u0027).item.json.phoneNumber;\nconst userMsg = $(\u0027Extract Message\u0027).item.json.chatInput;\nconst isReset = $(\u0027Extract Message\u0027).item.json.isReset;\n\n// 1. Obtener texto del agente (Recepcionista o DiseÃ±ador)\nconst rawText = $json.output || $json.text || $json.message || \u0027\u0027;\n\n// 2. Flags de routing\nlet routeDesigner       = false;\nlet renderRequest       = false;\nlet descriptionFurniture = null;\nlet backToRecep         = false;\nlet humanHandoff        = false;\nlet leadComplete        = false;\nlet leadData            = null;\nlet galeriaCocinas      = false;\nlet galeriaClosets      = false;\nlet galeriaBares        = false;\nlet galeriaPlafones     = false;\nlet galeriaPuertas      = false;\nlet galeriaMueblesTV    = false;\nlet galeriaLavanetas    = false;\n\n// 3. Parseo de tags\nif (rawText.includes(\u0027[ROUTE_DESIGNER]\u0027)) {\n  routeDesigner = true;\n  if (!staticData.inDesignerMode) staticData.inDesignerMode = {};\n  if (!staticData.inDesignerModeAt) staticData.inDesignerModeAt = {};\n  staticData.inDesignerMode[phoneNumber] = true;\n  staticData.inDesignerModeAt[phoneNumber] = Date.now();\n}\n\nconst renderMatch = rawText.match(/\\[RENDER_REQUEST\\]([\\s\\S]*?)\\[\\/RENDER_REQUEST\\]/);\nif (renderMatch) {\n  renderRequest = true;\n  descriptionFurniture = renderMatch[1].trim();\n}\n\nif (rawText.includes(\u0027[BACK_TO_RECEPCIONISTA]\u0027)) backToRecep = true;\nif (rawText.includes(\u0027[HUMAN_HANDOFF]\u0027)) humanHandoff = true;\n\nconst leadMatch = rawText.match(/\\[LEAD_COMPLETE\\]([\\s\\S]*?)\\[\\/LEAD_COMPLETE\\]/);\nif (leadMatch) {\n  leadComplete = true;\n  try {\n    leadData = JSON.parse(leadMatch[1].trim());\n    const renderData = staticData.renderData?.[phoneNumber];\n    if (renderData?.generatedImageUrl) {\n      leadData.generatedImageUrl = renderData.generatedImageUrl;\n    } else {\n      leadData.generatedImageUrl = null;\n    }\n  } catch (e) {\n    leadData = { parseError: true, raw: leadMatch[1].trim() };\n  }\n}\n\nif (rawText.includes(\u0027[GALERIA_COCINAS]\u0027))    galeriaCocinas   = true;\nif (rawText.includes(\u0027[GALERIA_CLOSETS]\u0027))    galeriaClosets   = true;\nif (rawText.includes(\u0027[GALERIA_BARES]\u0027))      galeriaBares     = true;\nif (rawText.includes(\u0027[GALERIA_PLAFONES]\u0027))   galeriaPlafones  = true;\nif (rawText.includes(\u0027[GALERIA_PUERTAS]\u0027))    galeriaPuertas   = true;\nif (rawText.includes(\u0027[GALERIA_MUEBLES_TV]\u0027)) galeriaMueblesTV = true;\nif (rawText.includes(\u0027[GALERIA_LAVANETAS]\u0027))  galeriaLavanetas = true;\n\n// 4. TTL inDesignerMode 24h\nconst modeAt = staticData.inDesignerModeAt?.[phoneNumber] || 0;\nif ((Date.now() - modeAt) \u003e 86400000 \u0026\u0026 staticData.inDesignerMode?.[phoneNumber]) {\n  staticData.inDesignerMode[phoneNumber] = false;\n}\n\n// 5. Limpiar inDesignerMode si el DiseÃ±ador cerrÃ³ o transfiriÃ³\nif (leadComplete || humanHandoff || backToRecep) {\n  if (staticData.inDesignerMode) staticData.inDesignerMode[phoneNumber] = false;\n  if (staticData.inDesignerModeAt) delete staticData.inDesignerModeAt[phoneNumber];\n}\n\n// 6. GalerÃ­a: mapa de imÃ¡genes con URLs reales de Cloudinary\nconst GALERIA_IMAGES = {\n  COCINAS:    [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017408/Cocina__gsvwif.jpg\u0027, \u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017407/Cocina_dbrfwf.jpg\u0027],\n  CLOSETS:    [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017405/vestidores_gj5gzs.jpg\u0027],\n  PLAFONES:   [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017375/plafon_s20od3.jpg\u0027],\n  PUERTAS:    [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017375/puerta_kfsuhg.jpg\u0027],\n  MUEBLES_TV: [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017409/muebleTV_szzzva.jpg\u0027],\n  BARES:      [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017403/bares_ryjvei.jpg\u0027],\n  LAVANETAS:  [\u0027https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778017402/lavanetas_x9swji.jpg\u0027]\n};\n\nlet galeria = null;\nlet imagenes = [];\nif (galeriaCocinas)   { galeria = \u0027COCINAS\u0027;    imagenes = GALERIA_IMAGES.COCINAS; }\nif (galeriaClosets)   { galeria = \u0027CLOSETS\u0027;    imagenes = GALERIA_IMAGES.CLOSETS; }\nif (galeriaBares)     { galeria = \u0027BARES\u0027;      imagenes = GALERIA_IMAGES.BARES; }\nif (galeriaPlafones)  { galeria = \u0027PLAFONES\u0027;   imagenes = GALERIA_IMAGES.PLAFONES; }\nif (galeriaPuertas)   { galeria = \u0027PUERTAS\u0027;    imagenes = GALERIA_IMAGES.PUERTAS; }\nif (galeriaMueblesTV) { galeria = \u0027MUEBLES_TV\u0027; imagenes = GALERIA_IMAGES.MUEBLES_TV; }\nif (galeriaLavanetas) { galeria = \u0027LAVANETAS\u0027;  imagenes = GALERIA_IMAGES.LAVANETAS; }\n\n// 7. Limpiar tags del texto visible al cliente\nconst cleanMessage = rawText\n  .replace(/\\[ROUTE_DESIGNER\\]/g, \u0027\u0027)\n  .replace(/\\[RENDER_REQUEST\\][\\s\\S]*?\\[\\/RENDER_REQUEST\\]/g, \u0027\u0027)\n  .replace(/\\[BACK_TO_RECEPCIONISTA\\]/g, \u0027\u0027)\n  .replace(/\\[HUMAN_HANDOFF\\]/g, \u0027\u0027)\n  .replace(/\\[LEAD_COMPLETE\\][\\s\\S]*?\\[\\/LEAD_COMPLETE\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_COCINAS\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_CLOSETS\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_BARES\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_PLAFONES\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_PUERTAS\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_MUEBLES_TV\\]/g, \u0027\u0027)\n  .replace(/\\[GALERIA_LAVANETAS\\]/g, \u0027\u0027)\n  .trim();\n\n// 8. HistÃ³rico\nif (!staticData.history) staticData.history = {};\nif (isReset) staticData.history[phoneNumber] = [];\nif (!staticData.history[phoneNumber]) staticData.history[phoneNumber] = [];\nconst cleanUser = (userMsg || \u0027\u0027).replace(/\\s+/g, \u0027 \u0027).trim();\nconst cleanBot = (cleanMessage || \u0027\u0027).replace(/\\s+/g, \u0027 \u0027).trim();\nstaticData.history[phoneNumber].push(\u0027U: \u0027 + cleanUser);\nstaticData.history[phoneNumber].push(\u0027B: \u0027 + cleanBot);\nif (staticData.history[phoneNumber].length \u003e 12) staticData.history[phoneNumber] = staticData.history[phoneNumber].slice(-12);\nconst soloUser = staticData.history[phoneNumber].filter(x =\u003e x.startsWith(\u0027U: \u0027)).map(x =\u003e x.slice(3)).slice(-4);\nconst transcripcion = soloUser.join(\u0027 | \u0027);\n\nconst now = new Date();\nconst fechaCorta = now.toLocaleString(\u0027es-MX\u0027, { timeZone: \u0027America/Monterrey\u0027, day: \u00272-digit\u0027, month: \u0027short\u0027, year: \u0027numeric\u0027 }).replace(/\\./g, \u0027\u0027);\nconst fechaTimestamp = now.toISOString();\n\nconst isCalificadoBypass = $json.isCalificadoBypass === true;\n// Detectar Nombre y Email del mensaje del cliente\nif (!staticData.collectedFields) staticData.collectedFields = {};\nif (!staticData.collectedFields[phoneNumber]) staticData.collectedFields[phoneNumber] = {};\nconst cf = staticData.collectedFields[phoneNumber];\nif (isReset) staticData.collectedFields[phoneNumber] = {};\n\nconst userInput = (userMsg || \u0027\u0027).trim();\n\n// Email regex\nconst emailMatch = userInput.match(/[\\w.+-]+@[\\w.-]+\\.[\\w]{2,}/i);\nif (emailMatch \u0026\u0026 !cf.email) cf.email = emailMatch[0];\n\n// Nombre: si el bot anterior preguntÃ³ por nombre, asumir que esta respuesta es el nombre\nconst hist = staticData.history?.[phoneNumber] || [];\nconst lastBotEntry = [...hist].reverse().find(x =\u003e x.startsWith(\u0027B: \u0027)) || \u0027\u0027;\nconst lastBotText = lastBotEntry.slice(3).toLowerCase();\nif (!cf.nombre \u0026\u0026 /nombre|cÃ³mo se llama|cuÃ¡l es su/i.test(lastBotText)) {\n  if (userInput.length \u003e 0 \u0026\u0026 userInput.length \u003c= 50 \u0026\u0026 !userInput.includes(\u0027@\u0027) \u0026\u0026 !/\\d{5,}/.test(userInput)) {\n    cf.nombre = userInput;\n  }\n}\n\nconst upsertParcial = (leadComplete || isCalificadoBypass) ? null : {\n  \u0027TelÃ©fono\u0027: phoneNumber,\n  \u0027Nombre\u0027: cf.nombre || \u0027\u0027,\n  \u0027Email\u0027: cf.email || \u0027\u0027,\n  \u0027Estado\u0027: \u0027Nuevo\u0027,\n  \u0027Ãšltima InteracciÃ³n\u0027: fechaCorta,\n  \u0027TranscripciÃ³n\u0027: transcripcion,\n};\n\nreturn [{\n  json: {\n    phoneNumber,\n    cleanMessage,\n    leadComplete,\n    leadData,\n    transcripcion,\n    fechaCorta,\n    fechaTimestamp,\n    upsertParcial,\n    humanHandoff,\n    backToRecep,\n    routeDesigner,\n    renderRequest,\n    descriptionFurniture,\n    galeria,\n    imagenes,\n    sendShowreel: false,\n    senderName: $(\u0027Extract Message\u0027).item.json.senderName,\n    inDesignerMode: staticData.inDesignerMode?.[phoneNumber] === true,\n  }\n}];"
                                      },
                       "id":  "c952c271-5b4c-4378-9e82-907758ded443",
                       "name":  "Detect Lead Complete",
@@ -331,14 +342,15 @@
                                                          "mappingMode":  "defineBelow",
                                                          "value":  {
                                                                        "TelÃ©fono":  "={{ $json.upsertCalificado[\u0027TelÃ©fono\u0027] }}",
+                                                                       "WhatsApp":  "={{ \u0027=HYPERLINK(\"https://wa.me/\u0027 + $json.upsertCalificado[\u0027TelÃ©fono\u0027] + \u0027\",\"ðŸ’¬ Chat\")\u0027 }}",
                                                                        "Nombre":  "={{ $json.upsertCalificado.Nombre }}",
                                                                        "Email":  "={{ $json.upsertCalificado.Email }}",
+                                                                       "Proyecto":  "={{ $json.upsertCalificado.Proyecto }}",
                                                                        "Presupuesto":  "={{ $json.upsertCalificado.Presupuesto }}",
                                                                        "Estado":  "={{ $json.upsertCalificado.Estado }}",
                                                                        "Ãšltima InteracciÃ³n":  "={{ $json.upsertCalificado[\u0027Ãšltima InteracciÃ³n\u0027] }}",
                                                                        "TranscripciÃ³n":  "={{ $json.upsertCalificado[\u0027TranscripciÃ³n\u0027] }}",
-                                                                       "Timestamp":  "={{ $json.upsertCalificado.Timestamp }}",
-                                                                       "Proyecto":  "={{ $json.upsertCalificado.Proyecto }}"
+                                                                       "Timestamp":  "={{ $json.upsertCalificado.Timestamp }}"
                                                                    },
                                                          "matchingColumns":  [
                                                                                  "TelÃ©fono"
@@ -352,6 +364,16 @@
                                                                             "display":  true,
                                                                             "type":  "string",
                                                                             "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "WhatsApp",
+                                                                            "displayName":  "WhatsApp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  false,
                                                                             "removed":  false
                                                                         },
                                                                         {
@@ -461,7 +483,7 @@
                       "parameters":  {
                                          "sendTo":  "luis.sanchezag@gmail.com",
                                          "subject":  "=Lead Reyna - {{ $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Nombre || \u0027Nuevo contacto\u0027 }}",
-                                         "message":  "={{ (() =\u003e {\n  const nombre      = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Nombre || $json.leadData?.nombre || \u0027Sin nombre\u0027;\n  const email       = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Email || $json.leadData?.email || \u0027Sin email\u0027;\n  const presupuesto = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Presupuesto || $json.leadData?.presupuesto || \u0027No indicado\u0027;\n  const proyecto    = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Proyecto || $json.leadData?.descripcion || \u0027Sin descripciÃ³n\u0027;\n  const imageUrl    = $(\u0027Cliente Interesado\u0027).item.json.leadData?.generatedImageUrl || null;\n  const phone       = $(\u0027Extract Message\u0027).item.json.phoneNumber || \u0027Desconocido\u0027;\n\n  const renderBlock = imageUrl ? `\u003ctr\u003e\u003ctd style=\"padding:0 30px 24px 30px;\"\u003e\u003ctable width=\"100%\" style=\"background:#f9f5f0;border-radius:8px;padding:20px;\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"\u003e\u003ctr\u003e\u003ctd style=\"padding-bottom:12px;\"\u003e\u003cp style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#5c3d1e;\"\u003eDiseÃ±o generado por IA\u003c/p\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"text-align:center;padding-bottom:12px;\"\u003e\u003cimg src=\"${imageUrl}\" alt=\"Render\" style=\"max-width:100%;max-height:400px;border-radius:6px;border:2px solid #d4a96a;\" /\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003e\u003cp style=\"margin:0;font-family:Arial,sans-serif;font-size:13px;color:#666;\"\u003e\u003cstrong\u003eDescripciÃ³n:\u003c/strong\u003e\u003cbr\u003e${proyecto}\u003c/p\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/td\u003e\u003c/tr\u003e` : \u0027\u0027;\n\n  return `\u003ch2 style=\"font-family:Arial,sans-serif;color:#3b1f0a;\"\u003eNuevo Prospecto â€” Reyna Cocinas y CarpinterÃ­as Finas\u003c/h2\u003e\u003ctable style=\"border-collapse:collapse;width:100%;font-family:Arial,sans-serif;\"\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eNombre\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${nombre}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eEmail\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${email}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eWhatsApp\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e+${phone}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eProyecto\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${proyecto}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003ePresupuesto\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${presupuesto}\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e${renderBlock}\u003cp style=\"font-family:Arial,sans-serif;\"\u003e\u003ca href=\"https://wa.me/${phone}\" style=\"background:#25d366;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin-top:16px;\"\u003eResponder por WhatsApp\u003c/a\u003e\u003c/p\u003e\u003cp style=\"font-family:Arial,sans-serif;font-size:11px;color:#aaa;\"\u003e\u003cstrong\u003eEST STUDIO\u003c/strong\u003e â€” Where \u003cem\u003eAI\u003c/em\u003e becomes your \u003cem\u003eprofessional advantage\u003c/em\u003e\u003c/p\u003e`;\n})() }}",
+                                         "message":  "={{ (() =\u003e {\n  const nombre      = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Nombre || $json.leadData?.nombre || \u0027Sin nombre\u0027;\n  const email       = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Email || $json.leadData?.email || \u0027Sin email\u0027;\n  const presupuesto = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Presupuesto || $json.leadData?.presupuesto || \u0027No indicado\u0027;\n  const proyecto    = $(\u0027Cliente Interesado\u0027).item.json.upsertCalificado?.Proyecto || $json.leadData?.descripcion || \u0027Sin descripciÃ³n\u0027;\n  const imageUrl    = $(\u0027Cliente Interesado\u0027).item.json.leadData?.generatedImageUrl || null;\n  const phone       = $(\u0027Extract Message\u0027).item.json.phoneNumber || \u0027Desconocido\u0027;\n\n  const renderBlock = imageUrl ? `\u003ctr\u003e\u003ctd style=\"padding:0 30px 24px 30px;\"\u003e\u003ctable width=\"100%\" style=\"background:#f9f5f0;border-radius:8px;padding:20px;\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"\u003e\u003ctr\u003e\u003ctd style=\"padding-bottom:12px;\"\u003e\u003cp style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#5c3d1e;\"\u003eDiseÃ±o generado por IA\u003c/p\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"text-align:center;padding-bottom:12px;\"\u003e\u003cimg src=\"${imageUrl}\" alt=\"Render\" style=\"max-width:100%;max-height:400px;border-radius:6px;border:2px solid #d4a96a;\" /\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003e\u003cp style=\"margin:0;font-family:Arial,sans-serif;font-size:13px;color:#666;\"\u003e\u003cstrong\u003eDescripciÃ³n:\u003c/strong\u003e\u003cbr\u003e${proyecto}\u003c/p\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/td\u003e\u003c/tr\u003e` : \u0027\u0027;\n\n  return `\u003ch2 style=\"font-family:Arial,sans-serif;color:#3b1f0a;\"\u003eNuevo Prospecto â€” Reyna Cocinas y CarpinterÃ­as Finas\u003c/h2\u003e\u003ctable style=\"border-collapse:collapse;width:100%;font-family:Arial,sans-serif;\"\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eNombre\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${nombre}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eEmail\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${email}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eWhatsApp\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e+${phone}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003eProyecto\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${proyecto}\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;font-weight:bold;\"\u003ePresupuesto\u003c/td\u003e\u003ctd style=\"padding:8px;border:1px solid #ddd;\"\u003e${presupuesto}\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e${renderBlock}\u003cp style=\"font-family:Arial,sans-serif;\"\u003e\u003ca href=\"https://wa.me/${phone}\" style=\"background:#25d366;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;margin-top:16px;\"\u003eResponder por WhatsApp\u003c/a\u003e\u003c/p\u003e`;\n})() }}",
                                          "options":  {
                                                          "appendAttribution":  false
                                                      }
@@ -693,6 +715,7 @@
                                                          "mappingMode":  "defineBelow",
                                                          "value":  {
                                                                        "TelÃ©fono":  "={{ $json.upsertParcial[\u0027TelÃ©fono\u0027] }}",
+                                                                       "WhatsApp":  "={{ \u0027=HYPERLINK(\"https://wa.me/\u0027 + $json.upsertParcial[\u0027TelÃ©fono\u0027] + \u0027\",\"ðŸ’¬ Chat\")\u0027 }}",
                                                                        "Nombre":  "={{ $json.upsertParcial.Nombre }}",
                                                                        "Email":  "={{ $json.upsertParcial.Email }}",
                                                                        "Proyecto":  "={{ $json.upsertParcial.Proyecto }}",
@@ -714,6 +737,16 @@
                                                                             "display":  true,
                                                                             "type":  "string",
                                                                             "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "WhatsApp",
+                                                                            "displayName":  "WhatsApp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  false,
                                                                             "removed":  false
                                                                         },
                                                                         {
@@ -866,32 +899,6 @@
                                        -2240,
                                        16
                                    ]
-                  },
-                  {
-                      "parameters":  {
-                                         "operation":  "send",
-                                         "phoneNumberId":  "1103955202801675",
-                                         "recipientPhoneNumber":  "={{ $json.phoneNumber }}",
-                                         "textBody":  "â³ Tu conversaciÃ³n estÃ¡ siendo atendida por un agente de Reyna. Te responderemos muy pronto. Si fue un error, escribe /volver para regresar al bot.",
-                                         "additionalFields":  {
-
-                                                              }
-                                     },
-                      "id":  "9a35d7e2-8d1e-47b1-863f-93b5e5f0a67d",
-                      "name":  "Responder En AtenciÃ³n",
-                      "type":  "n8n-nodes-base.whatsApp",
-                      "typeVersion":  1.1,
-                      "position":  [
-                                       -2016,
-                                       112
-                                   ],
-                      "webhookId":  "146e8dae-2866-4d78-a378-9bb9613ed72c",
-                      "credentials":  {
-                                          "whatsAppApi":  {
-                                                              "id":  "31KQwk1oC1jrRM1z",
-                                                              "name":  "WhatsApp account"
-                                                          }
-                                      }
                   },
                   {
                       "parameters":  {
@@ -1282,7 +1289,7 @@
                                          "promptType":  "define",
                                          "text":  "={{ $(\u0027Extract Message\u0027).item.json.chatInput }}",
                                          "options":  {
-                                                         "systemMessage":  "Eres el asistente de diseÃ±o de **Reyna Cocinas y CarpinterÃ­as Finas**, Monterrey, MÃ©xico. Eres experto en carpinterÃ­a fina y diseÃ±o de interiores. El cliente llegÃ³ porque quiere diseÃ±ar un mueble personalizado. Tu objetivo es guiarlo desde la descripciÃ³n de su idea hasta cerrar su cotizaciÃ³n.\n\n---\n\n## IDENTIDAD Y TONO\n\n- Profesional, entusiasta del diseÃ±o, sin ser informal.\n- Especialidades: cocinas integrales, closets, vestidores, bares, plafones, puertas, muebles de TV, lavanetas.\n- Tono cÃ¡lido y orientado a la acciÃ³n. Cada mensaje debe avanzar la conversaciÃ³n.\n\n---\n\n## FLUJO PRINCIPAL (4 PASOS)\n\n### PASO 1 â€” IDENTIFICAR TIPO DE MUEBLE\n\nIMPORTANTE: El cliente YA vio el menÃº de 6 opciones de mueble en el mensaje anterior (lo mostrÃ³ el recepcionista). Su primer mensaje a ti serÃ¡ la elecciÃ³n del mueble (nÃºmero 1-6 o nombre).\n\nMapeo:\n1ï¸âƒ£ Cocina integral / 2ï¸âƒ£ Closet o vestidor / 3ï¸âƒ£ Mueble de TV / 4ï¸âƒ£ Lavaneta / 5ï¸âƒ£ Puerta / 6ï¸âƒ£ Otro\n\nNO repitas el menÃº. Confirma brevemente el tipo elegido y avanza directo al PASO 2.\n\nSi el cliente elige 6 (Otro), pÃ­dele que describa quÃ© tipo de mueble antes de avanzar.\n\nSi el primer mensaje del cliente NO corresponde a ninguna opciÃ³n, pÃ­dele amablemente que indique de las 6 opciones cuÃ¡l le interesa.\n\n### PASO 2 â€” ESTILO, COLOR Y DETALLES (todo junto)\n\nUna vez identificado el mueble, pregunta TODO en un solo mensaje:\n\n\"Perfecto, una/un *[TIPO DE MUEBLE EN MAYÃšSCULAS]*. Ahora cuÃ©nteme:\n\nÂ¿QuÃ© estilo y color tiene en mente?\n\n*Estilos:* Moderno, ClÃ¡sico, Minimalista, RÃºstico, Industrial\n*Colores:* Madera natural, Blanco, Negro, Tonos oscuros\n*Dimensiones aproximadas:* Ancho, Alto, Profundidad\n*Herrajes o accesorios:* tiradores ocultos, iluminaciÃ³n LED, manijas doradas\n\nPuede responder libre, ej: \u0027moderna en blanco con detalles de madera\u0027\n\nEntre mÃ¡s detallado, mejor quedarÃ¡ su diseÃ±o ðŸªµ\"\n\nSi el cliente da poca info (incluso sÃ³lo estilo, o sÃ³lo color, o ambos sin dimensiones), AVANZA AL RENDER. Bastan 1-2 datos para disparar [RENDER_REQUEST]. NO pidas mÃ¡s detalles si ya hay algo de info â€” dispara el render y dile al cliente que despuÃ©s lo puede ajustar.\n\n### PASO 3 â€” GENERAR RENDER\n\nUna vez tengas tipo + estilo/color + detalles, emite:\n\n[RENDER_REQUEST]Mueble: [TIPO]. Estilo y color: [ESTILO_COLOR]. Detalles: [DETALLES][/RENDER_REQUEST]\n\nDespuÃ©s del tag escribe SOLO esto (nada mÃ¡s, sin menÃº, sin opciones): \"Perfecto, estoy generando una visualizaciÃ³n de su diseÃ±o. En un momento la recibirÃ¡.\"\n\n### PASO 3.1 â€” REACCIÃ“N AL RENDER\n\nIMPORTANTE: El menÃº post-render \"1 Ajustar / 2 Cotizar\" lo envÃ­a AUTOMÃTICAMENTE el sistema (nodo Enviar Menu Post-Render). TÃš NO debes mostrarlo en el mensaje que acompaÃ±a al [RENDER_REQUEST].\n\nLa respuesta del cliente DESPUÃ‰S de un render solo puede ser:\n- \"1\" o \"ajustar\" o \"cambiar\" â†’ PASO 3.2 (preguntar quÃ© ajustar, NO emitir render aÃºn)\n- \"2\" o \"cotizar\" o \"pasemos\" â†’ PASO 4 (pedir nombre, NO emitir render)\n- Cualquier otra cosa interpretarla en contexto\n\nREGLA CRÃTICA: Si tu Ãºltimo mensaje incluyÃ³ [RENDER_REQUEST] y el cliente responde \"2\", JAMÃS emitas otro [RENDER_REQUEST]. Salta directo al PASO 4 preguntando: \"Perfecto, vamos con su cotizaciÃ³n. Â¿CuÃ¡l es su nombre completo?\"\n\n### PASO 3.2 â€” ITERACIÃ“N (mÃ¡ximo 2 renders totales)\n\nSi el cliente elige 1 (ajustar) y hay intentos disponibles:\nPregunta quÃ© desea ajustar y emite otro [RENDER_REQUEST] con la descripciÃ³n actualizada.\n\nDespuÃ©s de cada render adicional NO escribas menÃº â€” el sistema lo envÃ­a automÃ¡ticamente.\n\nSi ya usÃ³ 2 renders y pide otro: \"Ya generamos 2 versiones del diseÃ±o. Para poder avanzar con su proyecto y no demorarnos mÃ¡s, continuemos con su cotizaciÃ³n. Â¿CuÃ¡l es su nombre?\"\n\nSi el cliente elige 2 (cotizar) â†’ avanza al PASO 4.\n\n### PASO 4 â€” RECOPILACIÃ“N DE DATOS Y CIERRE\n\nRecopila conversacionalmente: nombre completo, email, y presupuesto estimado.\n\nAl pedir el presupuesto, MUESTRA SIEMPRE este menÃº numerado con emojis (idÃ©ntico al estilo del resto del bot):\n\n\"Â¿CuÃ¡l es su presupuesto estimado para este proyecto?\n\n1ï¸âƒ£ Menos de $30,000 MXN\n2ï¸âƒ£ $30,000 â€“ $80,000 MXN\n3ï¸âƒ£ MÃ¡s de $80,000 MXN\"\n\nAcepta nÃºmero (1/2/3) o el rango escrito. Mapea al campo \"presupuesto\" del LEAD_COMPLETE.\n\nAl tener todo, emite:\n\n[LEAD_COMPLETE]{\"nombre\":\"VALOR\",\"email\":\"VALOR\",\"presupuesto\":\"VALOR\",\"tipo\":\"VALOR\",\"descripcion\":\"VALOR\",\"generatedImageUrl\":\"PENDIENTE\"}[/LEAD_COMPLETE]\n\n\"Â¡Listo! Hemos registrado su solicitud. Un asesor de Reyna le contactarÃ¡ a la brevedad. Â¡Muchas gracias!\"\n\n**IMPORTANTE:** Escribe siempre \"generatedImageUrl\":\"PENDIENTE\" â€” el sistema lo reemplaza automÃ¡ticamente. En \"descripcion\" concatena Mueble + Estilo/Color + Detalles.\n\n---\n\n## CASOS ESPECIALES\n\n### Si el render fallÃ³\nSi en el contexto recibes: \"NOTA DEL SISTEMA: El render fallÃ³. ContinÃºa con la cotizaciÃ³n.\"\nResponde: \"Tuve un pequeÃ±o inconveniente al generar la visualizaciÃ³n, pero podemos cotizar perfectamente. Â¿Me dice su nombre para continuar?\"\nAvanza al PASO 4. No emitas mÃ¡s [RENDER_REQUEST].\n\n### Si el cliente describe algo fuera de carpinterÃ­a\nResponde: \"Mi especialidad es el diseÃ±o de muebles de carpinterÃ­a fina. Â¿Tiene algo de ese tipo en mente?\"\n\n### Si el cliente quiere volver al menÃº\n\"Por supuesto, le regreso al menÃº principal.\"\n[BACK_TO_RECEPCIONISTA]\n\n### Si el cliente pide hablar con una persona\n\"Con gusto, le conecto con uno de nuestros asesores.\"\n[HUMAN_HANDOFF]\n\n---\n\n## TAGS QUE PUEDES EMITIR\n\n- [RENDER_REQUEST]descripciÃ³n completa[/RENDER_REQUEST]\n- [LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"presupuesto\":\"...\",\"tipo\":\"...\",\"descripcion\":\"...\",\"generatedImageUrl\":\"PENDIENTE\"}[/LEAD_COMPLETE]\n- [HUMAN_HANDOFF]\n- [BACK_TO_RECEPCIONISTA]"
+                                                         "systemMessage":  "Eres el asistente de diseÃ±o de **Reyna Cocinas y CarpinterÃ­as Finas**, Monterrey, MÃ©xico. Eres experto en carpinterÃ­a fina y diseÃ±o de interiores. El cliente llegÃ³ porque quiere diseÃ±ar un mueble personalizado. Tu objetivo es guiarlo desde la descripciÃ³n de su idea hasta cerrar su cotizaciÃ³n.\n\n---\n\n## IDENTIDAD Y TONO\n\n- Profesional, entusiasta del diseÃ±o, sin ser informal.\n- Especialidades: cocinas integrales, closets, vestidores, bares, plafones, puertas, muebles de TV, lavanetas.\n- Tono cÃ¡lido y orientado a la acciÃ³n. Cada mensaje debe avanzar la conversaciÃ³n.\n\n---\n\n## FLUJO PRINCIPAL (4 PASOS)\n\n### PASO 1 â€” IDENTIFICAR TIPO DE MUEBLE\n\nIMPORTANTE: El cliente YA vio el menÃº de 6 opciones de mueble en el mensaje anterior (lo mostrÃ³ el recepcionista). Su primer mensaje a ti serÃ¡ la elecciÃ³n del mueble (nÃºmero 1-6 o nombre).\n\nMapeo:\n1ï¸âƒ£ Cocina integral / 2ï¸âƒ£ Closet o vestidor / 3ï¸âƒ£ Mueble de TV / 4ï¸âƒ£ Lavaneta / 5ï¸âƒ£ Puerta / 6ï¸âƒ£ Otro\n\nNO repitas el menÃº. Confirma brevemente el tipo elegido y avanza directo al PASO 2.\n\nSi el cliente elige 6 (Otro), pÃ­dele que describa quÃ© tipo de mueble antes de avanzar.\n\nSi el primer mensaje del cliente NO corresponde a ninguna opciÃ³n, pÃ­dele amablemente que indique de las 6 opciones cuÃ¡l le interesa.\n\n### PASO 2 â€” ESTILO, COLOR Y DETALLES (todo junto)\n\nUna vez identificado el mueble, pregunta TODO en un solo mensaje:\n\n\"Perfecto, una/un *[TIPO DE MUEBLE EN MAYÃšSCULAS]*. Ahora cuÃ©nteme:\n\nÂ¿QuÃ© estilo y color tiene en mente?\n\n*Estilos:* Moderno, ClÃ¡sico, Minimalista, RÃºstico, Industrial\n*Colores:* Madera natural, Blanco, Negro, Tonos oscuros\n*Dimensiones aproximadas:* Ancho, Alto, Profundidad\n*Herrajes o accesorios:* tiradores ocultos, iluminaciÃ³n LED, manijas doradas\n\nPuede responder libre, ej: \u0027moderna en blanco con detalles de madera\u0027\n\nEntre mÃ¡s detallado, mejor quedarÃ¡ su diseÃ±o ðŸªµ\"\n\nSi el cliente da poca info (incluso sÃ³lo estilo, o sÃ³lo color, o ambos sin dimensiones), AVANZA AL RENDER. Bastan 1-2 datos para disparar [RENDER_REQUEST]. NO pidas mÃ¡s detalles si ya hay algo de info â€” dispara el render y dile al cliente que despuÃ©s lo puede ajustar.\n\n### PASO 3 â€” GENERAR RENDER\n\nUna vez tengas tipo + estilo/color + detalles, emite:\n\n[RENDER_REQUEST]Mueble: [TIPO]. Estilo y color: [ESTILO_COLOR]. Detalles: [DETALLES][/RENDER_REQUEST]\n\nDespuÃ©s del tag escribe SOLO esto (nada mÃ¡s, sin menÃº, sin opciones): \"Perfecto, estoy generando una visualizaciÃ³n de su diseÃ±o. En un momento la recibirÃ¡.\"\n\n### PASO 3.1 â€” REACCIÃ“N AL RENDER\n\nIMPORTANTE: El menÃº post-render \"1 Ajustar / 2 Cotizar\" lo envÃ­a AUTOMÃTICAMENTE el sistema (nodo Enviar Menu Post-Render). TÃš NO debes mostrarlo en el mensaje que acompaÃ±a al [RENDER_REQUEST].\n\nLa respuesta del cliente DESPUÃ‰S de un render solo puede ser:\n- \"1\" o \"ajustar\" o \"cambiar\" â†’ PASO 3.2 (preguntar quÃ© ajustar, NO emitir render aÃºn)\n- \"2\" o \"cotizar\" o \"pasemos\" â†’ PASO 4 (pedir nombre, NO emitir render)\n- Cualquier otra cosa interpretarla en contexto\n\nREGLA CRÃTICA: Si tu Ãºltimo mensaje incluyÃ³ [RENDER_REQUEST] y el cliente responde \"2\", JAMÃS emitas otro [RENDER_REQUEST]. Salta directo al PASO 4 preguntando: \"Perfecto, vamos con su cotizaciÃ³n. Â¿CuÃ¡l es su nombre completo?\"\n\n### PASO 3.2 â€” ITERACIÃ“N (mÃ¡ximo 2 renders totales)\n\nSi el cliente elige 1 (ajustar) y hay intentos disponibles:\nPregunta quÃ© desea ajustar.\n\nCuando el cliente responda quÃ© quiere ajustar, emite [RENDER_REQUEST] usando ESTE FORMATO ESPECIAL para iteraciones:\n\n[RENDER_REQUEST]IteraciÃ³n del diseÃ±o previo. DISEÃ‘O ANTERIOR: \"[copia textual del Mueble + Estilo + Color + Detalles del render previo]\". CAMBIO SOLICITADO: \"[lo que el cliente acaba de pedir cambiar]\". MANTENER IDÃ‰NTICO TODO LO DEMÃS del diseÃ±o anterior â€” mismas dimensiones, materiales, composiciÃ³n, encuadre, iluminaciÃ³n y estilo general; solo aplicar el cambio solicitado.[/RENDER_REQUEST]\n\nEjemplo: si el diseÃ±o anterior fue \"Cocina integral moderna en blanco con detalles de madera, 3x2.5m, tiradores ocultos, LED\" y el cliente pide \"que sea negra\", emite:\n[RENDER_REQUEST]IteraciÃ³n del diseÃ±o previo. DISEÃ‘O ANTERIOR: \"Cocina integral moderna en blanco con detalles de madera, 3x2.5m, tiradores ocultos, LED\". CAMBIO SOLICITADO: \"cambiar color principal a negro\". MANTENER IDÃ‰NTICO TODO LO DEMÃS del diseÃ±o anterior â€” mismas dimensiones, materiales, composiciÃ³n, encuadre, iluminaciÃ³n y estilo general; solo aplicar el cambio solicitado.[/RENDER_REQUEST]\n\nDespuÃ©s de cada render adicional NO escribas menÃº â€” el sistema lo envÃ­a automÃ¡ticamente.\n\nSi ya usÃ³ 2 renders y pide otro: \"Ya generamos 2 versiones del diseÃ±o. Para poder avanzar con su proyecto y no demorarnos mÃ¡s, continuemos con su cotizaciÃ³n. Â¿CuÃ¡l es su nombre?\"\n\nSi el cliente elige 2 (cotizar) â†’ avanza al PASO 4.\n\n### PASO 4 â€” RECOPILACIÃ“N DE DATOS Y CIERRE\n\nRecopila conversacionalmente: nombre completo, email, y presupuesto estimado.\n\nAl pedir el presupuesto, MUESTRA SIEMPRE este menÃº numerado con emojis (idÃ©ntico al estilo del resto del bot):\n\n\"Â¿CuÃ¡l es su presupuesto estimado para este proyecto?\n\n1ï¸âƒ£ Menos de $30,000 MXN\n2ï¸âƒ£ $30,000 â€“ $80,000 MXN\n3ï¸âƒ£ MÃ¡s de $80,000 MXN\"\n\nAcepta nÃºmero (1/2/3) o el rango escrito. Mapea al campo \"presupuesto\" del LEAD_COMPLETE.\n\nAl tener todo, emite:\n\n[LEAD_COMPLETE]{\"nombre\":\"VALOR\",\"email\":\"VALOR\",\"presupuesto\":\"VALOR\",\"tipo\":\"VALOR\",\"descripcion\":\"VALOR\",\"generatedImageUrl\":\"PENDIENTE\"}[/LEAD_COMPLETE]\n\n\"Â¡Listo! Hemos registrado su solicitud. Un asesor de Reyna le contactarÃ¡ a la brevedad. Â¡Muchas gracias!\"\n\n**IMPORTANTE:** Escribe siempre \"generatedImageUrl\":\"PENDIENTE\" â€” el sistema lo reemplaza automÃ¡ticamente. En \"descripcion\" concatena Mueble + Estilo/Color + Detalles.\n\n---\n\n## CASOS ESPECIALES\n\n### Si el render fallÃ³\nSi en el contexto recibes: \"NOTA DEL SISTEMA: El render fallÃ³. ContinÃºa con la cotizaciÃ³n.\"\nResponde: \"Tuve un pequeÃ±o inconveniente al generar la visualizaciÃ³n, pero podemos cotizar perfectamente. Â¿Me dice su nombre para continuar?\"\nAvanza al PASO 4. No emitas mÃ¡s [RENDER_REQUEST].\n\n### Si el cliente describe algo fuera de carpinterÃ­a\nResponde: \"Mi especialidad es el diseÃ±o de muebles de carpinterÃ­a fina. Â¿Tiene algo de ese tipo en mente?\"\n\n### Si el cliente quiere volver al menÃº\n\"Por supuesto, le regreso al menÃº principal.\"\n[BACK_TO_RECEPCIONISTA]\n\n### Si el cliente pide hablar con una persona\n\"Con gusto, le conecto con uno de nuestros asesores.\"\n[HUMAN_HANDOFF]\n\n---\n\n## TAGS QUE PUEDES EMITIR\n\n- [RENDER_REQUEST]descripciÃ³n completa[/RENDER_REQUEST]\n- [LEAD_COMPLETE]{\"nombre\":\"...\",\"email\":\"...\",\"presupuesto\":\"...\",\"tipo\":\"...\",\"descripcion\":\"...\",\"generatedImageUrl\":\"PENDIENTE\"}[/LEAD_COMPLETE]\n- [HUMAN_HANDOFF]\n- [BACK_TO_RECEPCIONISTA]"
                                                      }
                                      },
                       "id":  "asistente-disenador-001",
@@ -1408,94 +1415,8 @@
                   },
                   {
                       "parameters":  {
-                                         "method":  "POST",
-                                         "url":  "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
-                                         "authentication":  "genericCredentialType",
-                                         "genericAuthType":  "httpQueryAuth",
-                                         "sendBody":  true,
-                                         "specifyBody":  "json",
-                                         "jsonBody":  "={\"model\":\"models/gemini-embedding-001\",\"content\":{\"parts\":[{\"text\":{{ JSON.stringify(String($(\u0027Validar Tema\u0027).item.json.descriptionFurniture || \u0027\u0027)) }}}]}}",
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "d4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8",
-                      "name":  "Generar Embedding DescripciÃ³n",
-                      "type":  "n8n-nodes-base.httpRequest",
-                      "typeVersion":  4.2,
-                      "position":  [
-                                       2864,
-                                       304
-                                   ],
-                      "credentials":  {
-                                          "httpQueryAuth":  {
-                                                                "id":  "dfosELug73LvYyOO",
-                                                                "name":  "Query Auth account 2"
-                                                            }
-                                      }
-                  },
-                  {
-                      "parameters":  {
                                          "mode":  "runOnceForEachItem",
-                                         "jsCode":  "const prev = $(\u0027Validar Tema\u0027).item.json;\nconst values = $input.item.json.embedding?.values || [];\nreturn { ...prev, queryEmbedding: values };"
-                                     },
-                      "id":  "e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9",
-                      "name":  "Extraer Embedding DescripciÃ³n",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       3088,
-                                       304
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "documentId":  {
-                                                            "__rl":  true,
-                                                            "value":  "1M17krae73v3cS00tQTWV-kJcxo8k1txzXaR8mv0dA8c",
-                                                            "mode":  "id"
-                                                        },
-                                         "sheetName":  {
-                                                           "__rl":  true,
-                                                           "value":  "Catalogo",
-                                                           "mode":  "name"
-                                                       },
-                                         "options":  {
-
-                                                     }
-                                     },
-                      "id":  "leer-catalogo-render-001",
-                      "name":  "Leer Catalogo Render",
-                      "type":  "n8n-nodes-base.googleSheets",
-                      "typeVersion":  4.5,
-                      "position":  [
-                                       3312,
-                                       304
-                                   ],
-                      "credentials":  {
-                                          "googleSheetsOAuth2Api":  {
-                                                                        "id":  "F5ulUZ2Ax6X8HpPv",
-                                                                        "name":  "Google Sheets account 2"
-                                                                    }
-                                      }
-                  },
-                  {
-                      "parameters":  {
-                                         "jsCode":  "const ctx = $(\u0027Extraer Embedding DescripciÃ³n\u0027).item.json;\nconst queryEmbedding = ctx.queryEmbedding;\nconst phone = ctx.phoneNumber;\nconst desc = ctx.descriptionFurniture;\n\nconst catalogItems = $(\u0027Leer Catalogo Render\u0027).all()\n  .filter(item =\u003e item.json.embedding \u0026\u0026 item.json.cloudinary_url)\n  .map(item =\u003e {\n    let emb;\n    try { emb = JSON.parse(item.json.embedding); } catch(e) { return null; }\n    return { ...item.json, embeddingParsed: emb };\n  })\n  .filter(Boolean);\n\nif (catalogItems.length === 0) {\n  return [{ json: { ...ctx, top3: [], validRender: false, bypassReason: \u0027empty_catalog\u0027 } }];\n}\n\nfunction cosineSim(a, b) {\n  let dot = 0, normA = 0, normB = 0;\n  for (let i = 0; i \u003c a.length; i++) {\n    dot += a[i] * b[i];\n    normA += a[i] * a[i];\n    normB += b[i] * b[i];\n  }\n  return dot / (Math.sqrt(normA) * Math.sqrt(normB));\n}\n\nconst scored = catalogItems.map(item =\u003e ({\n  ...item,\n  score: cosineSim(queryEmbedding, item.embeddingParsed)\n})).sort((a, b) =\u003e b.score - a.score);\n\nconst top3 = scored.slice(0, 3);\n\nif (top3[0].score \u003c 0.5) {\n  return [{ json: { ...ctx, top3: [], validRender: false, bypassReason: \u0027low_similarity\u0027 } }];\n}\n\nreturn [{\n  json: {\n    ...ctx,\n    top3: top3.map(i =\u003e ({ id: i.id, cloudinary_url: i.cloudinary_url, score: i.score, categoria: i.categoria })),\n    top3Refs: top3.map(i =\u003e i.cloudinary_url).join(\u0027, \u0027)\n  }\n}];"
-                                     },
-                      "id":  "f6a7b8c9-d0e1-4f2a-3b4c-d5e6f7a8b9c0",
-                      "name":  "Buscar Top-3 CatÃ¡logo",
-                      "type":  "n8n-nodes-base.code",
-                      "typeVersion":  2,
-                      "position":  [
-                                       3520,
-                                       304
-                                   ]
-                  },
-                  {
-                      "parameters":  {
-                                         "mode":  "runOnceForEachItem",
-                                         "jsCode":  "const top3 = $json.top3 || [];\nconst refUrls = top3.map((r, i) =\u003e `Referencia ${i+1}: ${r.cloudinary_url}`).join(\u0027\\n\u0027);\nconst prompt = `Genera UNA imagen fotorrealista de un mueble fabricado por Reyna Cocinas y CarpinterÃ­as Finas (Monterrey, MÃ©xico), 37 aÃ±os de oficio. Estilo: carpinterÃ­a fina, calidad alta, ambiente residencial.\\n\\nMueble solicitado: \"${$json.descriptionFurniture}\"\\n\\nImÃ¡genes de referencia de estilo (usa estas como guÃ­a de materiales y acabados):\\n${refUrls}\\n\\nREGLAS ESTRICTAS:\\n- Solo muebles fijos a medida (cocinas, closets, bares, plafones, puertas, muebles de TV, lavanetas). \\n- Sin personas, sin texto sobreimpreso, sin marcas de agua.\\n- IluminaciÃ³n cÃ¡lida, fondo neutro.\\n- ComposiciÃ³n de catÃ¡logo de carpinterÃ­a.`;\n\nreturn { ...$json, geminiPrompt: prompt };"
+                                         "jsCode":  "const ctx = $(\u0027Validar Tema\u0027).item.json;\nconst desc = ctx.descriptionFurniture || \u0027\u0027;\nconst phone = ctx.phoneNumber;\n\nconst prompt = `Genera UNA imagen fotorrealista de un mueble fabricado por Reyna Cocinas y CarpinterÃ­as Finas (Monterrey, MÃ©xico), 37 aÃ±os de oficio. Estilo: carpinterÃ­a fina, calidad alta, ambiente residencial.\\n\\nMueble solicitado: \"${desc}\"\\n\\nREGLAS ESTRICTAS:\\n- Solo muebles fijos a medida (cocinas, closets, bares, plafones, puertas, muebles de TV, lavanetas).\\n- Sin personas, sin texto sobreimpreso, sin marcas de agua.\\n- IluminaciÃ³n cÃ¡lida, fondo neutro.\\n- ComposiciÃ³n de catÃ¡logo de carpinterÃ­a.`;\n\nreturn { json: { phoneNumber: phone, descriptionFurniture: desc, geminiPrompt: prompt } };"
                                      },
                       "id":  "a7b8c9d0-e1f2-4a3b-4c5d-e6f7a8b9c0d1",
                       "name":  "Preparar Prompt Render",
@@ -1590,7 +1511,7 @@
                   {
                       "parameters":  {
                                          "mode":  "runOnceForEachItem",
-                                         "jsCode":  "const ctx = $(\u0027Buscar Top-3 CatÃ¡logo\u0027).item.json;\nconst phone = ctx.phoneNumber;\nconst desc = ctx.descriptionFurniture;\nconst top3Refs = ctx.top3Refs || \u0027\u0027;\nconst categoria = ctx.top3?.[0]?.categoria || \u0027\u0027;\nconst cloudinaryUrl = $json.secure_url;\n\nconst staticData = $getWorkflowStaticData(\u0027global\u0027);\nif (!staticData.renderData) staticData.renderData = {};\nif (!staticData.renderData[phone]) staticData.renderData[phone] = { renderCount: 0 };\nstaticData.renderData[phone].renderCount += 1;\nstaticData.renderData[phone].generatedImageUrl = cloudinaryUrl;\nstaticData.renderData[phone].lastDescription = desc;\n\nreturn {\n  phoneNumber: phone,\n  descriptionFurniture: desc,\n  top3: ctx.top3,\n  top3Refs: top3Refs,\n  generatedImageUrl: cloudinaryUrl,\n  renderCount: staticData.renderData[phone].renderCount\n};"
+                                         "jsCode":  "const ctx = $(\u0027Validar Tema\u0027).item.json;\nconst phone = ctx.phoneNumber;\nconst desc = ctx.descriptionFurniture;\nconst cloudinaryUrl = $json.secure_url;\n\nconst staticData = $getWorkflowStaticData(\u0027global\u0027);\nif (!staticData.renderData) staticData.renderData = {};\nif (!staticData.renderData[phone]) staticData.renderData[phone] = { renderCount: 0 };\nstaticData.renderData[phone].renderCount += 1;\nstaticData.renderData[phone].generatedImageUrl = cloudinaryUrl;\nstaticData.renderData[phone].lastDescription = desc;\n\nreturn {\n  phoneNumber: phone,\n  descriptionFurniture: desc,\n  generatedImageUrl: cloudinaryUrl,\n  renderCount: staticData.renderData[phone].renderCount\n};"
                                      },
                       "id":  "e1f2a3b4-c5d6-4e7f-8a9b-c0d1e2f3a4b5",
                       "name":  "Guardar URL Render",
@@ -1620,9 +1541,7 @@
                                                                        "timestamp":  "={{ new Date().toISOString() }}",
                                                                        "telefono":  "={{ $json.phoneNumber }}",
                                                                        "descripcion":  "={{ $json.descriptionFurniture }}",
-                                                                       "cloudinary_url":  "={{ $json.generatedImageUrl }}",
-                                                                       "categoria_inferida":  "={{ $json.top3?.[0]?.categoria || \u0027\u0027 }}",
-                                                                       "top_3_referencias":  "={{ $json.top3Refs || \u0027\u0027 }}"
+                                                                       "Foto":  "={{ $json.generatedImageUrl }}"
                                                                    },
                                                          "matchingColumns":  [
 
@@ -1656,26 +1575,8 @@
                                                                             "canBeUsedToMatch":  true
                                                                         },
                                                                         {
-                                                                            "id":  "cloudinary_url",
-                                                                            "displayName":  "cloudinary_url",
-                                                                            "required":  false,
-                                                                            "defaultMatch":  false,
-                                                                            "display":  true,
-                                                                            "type":  "string",
-                                                                            "canBeUsedToMatch":  true
-                                                                        },
-                                                                        {
-                                                                            "id":  "categoria_inferida",
-                                                                            "displayName":  "categoria_inferida",
-                                                                            "required":  false,
-                                                                            "defaultMatch":  false,
-                                                                            "display":  true,
-                                                                            "type":  "string",
-                                                                            "canBeUsedToMatch":  true
-                                                                        },
-                                                                        {
-                                                                            "id":  "top_3_referencias",
-                                                                            "displayName":  "top_3_referencias",
+                                                                            "id":  "Foto",
+                                                                            "displayName":  "Foto",
                                                                             "required":  false,
                                                                             "defaultMatch":  false,
                                                                             "display":  true,
@@ -1908,6 +1809,184 @@
                                          "mode":  "runOnceForEachItem",
                                          "jsCode":  "const ctx = $(\u0027Process Lookup\u0027).item.json;\nconst nombre = (ctx.Nombre || \u0027\u0027).trim() || \u0027estimado cliente\u0027;\nconst proyecto = (ctx.Proyecto || \u0027\u0027).trim();\nconst firstName = nombre.split(\u0027 \u0027)[0];\n\nlet msg = `Hola ${firstName}, quÃ© gusto saludarle nuevamente.\\n\\nVeo que ya tenemos su solicitud registrada`;\nif (proyecto) {\n  const shortProj = proyecto.length \u003e 100 ? proyecto.substring(0, 100) + \u0027...\u0027 : proyecto;\n  msg += ` para el siguiente proyecto:\\n_${shortProj}_`;\n}\nmsg += `.\\n\\nNuestro equipo de ventas se pondrÃ¡ en contacto con usted muy pronto. Si necesita ajustar algo del diseÃ±o o tiene alguna duda, indÃ­quenos con gusto. ðŸªµ`;\n\nreturn { json: { output: msg, isCalificadoBypass: true } };"
                                      }
+                  },
+                  {
+                      "id":  "save-cw-convid-001",
+                      "name":  "Save Chatwoot ConvId",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1140,
+                                       -350
+                                   ],
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "const phone = $(\u0027Extract Message\u0027).item.json.phoneNumber;\nconst convId = $json.id;\nconst wf = $getWorkflowStaticData(\u0027global\u0027);\nif (!wf.chatwootConvId) wf.chatwootConvId = {};\nif (convId) wf.chatwootConvId[phone] = convId;\nreturn { json: $json };"
+                                     }
+                  },
+                  {
+                      "id":  "cw-log-pausa-001",
+                      "name":  "Chatwoot - Log Cliente Pausa",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       -1800,
+                                       200
+                                   ],
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "=https://chatwoot.est-studio.co/api/v1/accounts/1/conversations/{{ $json.convId }}/messages",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "httpHeaderAuth",
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"content\": {{ JSON.stringify($json.chatInput || \u0027\u0027) }},\n  \"message_type\": \"incoming\"\n}",
+                                         "options":  {
+                                                         "timeout":  5000
+                                                     }
+                                     },
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "s0oVDjlqYuWtXpk0",
+                                                                 "name":  "Chatwoot API"
+                                                             }
+                                      },
+                      "onError":  "continueRegularOutput"
+                  },
+                  {
+                      "id":  "cw-buscar-contacto-pausa",
+                      "name":  "CW Pausa - Buscar Contacto",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       -1900,
+                                       280
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "=https://chatwoot.est-studio.co/api/v1/accounts/1/contacts/search?q=%2B{{ $json.phoneNumber }}\u0026include_contacts=true",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "httpHeaderAuth",
+                                         "options":  {
+                                                         "timeout":  5000
+                                                     },
+                                         "onError":  "continueRegularOutput"
+                                     },
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "s0oVDjlqYuWtXpk0",
+                                                                 "name":  "Chatwoot API"
+                                                             }
+                                      }
+                  },
+                  {
+                      "id":  "cw-buscar-conv-pausa",
+                      "name":  "CW Pausa - Buscar Conv",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4,
+                      "position":  [
+                                       -1700,
+                                       280
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "=https://chatwoot.est-studio.co/api/v1/accounts/1/contacts/{{ $json.payload?.[0]?.id || 0 }}/conversations",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "httpHeaderAuth",
+                                         "options":  {
+                                                         "timeout":  5000
+                                                     },
+                                         "onError":  "continueRegularOutput"
+                                     },
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "s0oVDjlqYuWtXpk0",
+                                                                 "name":  "Chatwoot API"
+                                                             }
+                                      }
+                  },
+                  {
+                      "id":  "cw-resolve-convid-pausa",
+                      "name":  "CW Pausa - Resolve ConvId",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1500,
+                                       280
+                                   ],
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "const phone = $(\u0027Extract Message\u0027).item.json.phoneNumber;\nconst chatInput = $(\u0027Extract Message\u0027).item.json.chatInput;\nconst wf = $getWorkflowStaticData(\u0027global\u0027);\nlet convId = wf.chatwootConvId?.[phone];\n\n// Si no tenemos convId guardado, intentar resolver desde el lookup\nif (!convId) {\n  const payload = $json.payload || $json.data?.payload || [];\n  const openConv = payload.find(c =\u003e c.status === \u0027open\u0027 || c.status === \u0027pending\u0027) || payload[0];\n  if (openConv?.id) {\n    convId = openConv.id;\n    if (!wf.chatwootConvId) wf.chatwootConvId = {};\n    wf.chatwootConvId[phone] = convId;\n  }\n}\n\nreturn { json: { phoneNumber: phone, chatInput, convId: convId || null } };"
+                                     }
+                  },
+                  {
+                      "id":  "if-last-render-001",
+                      "name":  "Â¿Ãšltimo Render?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2,
+                      "position":  [
+                                       4900,
+                                       200
+                                   ],
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "typeValidation":  "strict"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-last",
+                                                                                   "leftValue":  "={{ $(\u0027Guardar URL Render\u0027).item.json.renderCount }}",
+                                                                                   "rightValue":  2,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gte"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        }
+                                     }
+                  },
+                  {
+                      "id":  "push-cierre-hist-001",
+                      "name":  "Push Cierre History",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       5100,
+                                       100
+                                   ],
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "const wf = $getWorkflowStaticData(\u0027global\u0027);\nconst phone = $(\u0027Extract Message\u0027).item.json.phoneNumber;\nconst cierre = \u0027Es su Ãºltima versiÃ³n disponible. Pasemos a su cotizaciÃ³n. Â¿CuÃ¡l es su nombre completo?\u0027;\nif (!wf.history) wf.history = {};\nif (!wf.history[phone]) wf.history[phone] = [];\nwf.history[phone].push(\u0027B: \u0027 + cierre);\nif (wf.history[phone].length \u003e 12) wf.history[phone] = wf.history[phone].slice(-12);\nreturn { json: { phoneNumber: phone, cierreText: cierre } };"
+                                     }
+                  },
+                  {
+                      "id":  "enviar-cierre-renders-001",
+                      "name":  "Enviar Cierre Renders",
+                      "type":  "n8n-nodes-base.whatsApp",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       5300,
+                                       100
+                                   ],
+                      "parameters":  {
+                                         "operation":  "send",
+                                         "phoneNumberId":  "1103955202801675",
+                                         "recipientPhoneNumber":  "={{ $(\u0027Extract Message\u0027).item.json.phoneNumber }}",
+                                         "textBody":  "Es su Ãºltima versiÃ³n disponible. Pasemos a su cotizaciÃ³n. Â¿CuÃ¡l es su nombre completo?",
+                                         "additionalFields":  {
+
+                                                              }
+                                     },
+                      "credentials":  {
+                                          "whatsAppApi":  {
+                                                              "id":  "31KQwk1oC1jrRM1z",
+                                                              "name":  "WhatsApp account"
+                                                          }
+                                      }
                   }
               ],
     "connections":  {
@@ -1948,7 +2027,12 @@
                                             "main":  [
                                                          [
                                                              {
-                                                                 "node":  "Responder En AtenciÃ³n",
+                                                                 "node":  "Chatwoot - Log Cliente Pausa",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             },
+                                                             {
+                                                                 "node":  "CW Pausa - Buscar Contacto",
                                                                  "type":  "main",
                                                                  "index":  0
                                                              }
@@ -2206,61 +2290,6 @@
                                                                        ]
                                                                    ]
                                                       },
-                        "Responder WA Generando":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "Generar Embedding DescripciÃ³n",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
-                        "Generar Embedding DescripciÃ³n":  {
-                                                               "main":  [
-                                                                            [
-                                                                                {
-                                                                                    "node":  "Extraer Embedding DescripciÃ³n",
-                                                                                    "type":  "main",
-                                                                                    "index":  0
-                                                                                }
-                                                                            ]
-                                                                        ]
-                                                           },
-                        "Extraer Embedding DescripciÃ³n":  {
-                                                               "main":  [
-                                                                            [
-                                                                                {
-                                                                                    "node":  "Leer Catalogo Render",
-                                                                                    "type":  "main",
-                                                                                    "index":  0
-                                                                                }
-                                                                            ]
-                                                                        ]
-                                                           },
-                        "Leer Catalogo Render":  {
-                                                     "main":  [
-                                                                  [
-                                                                      {
-                                                                          "node":  "Buscar Top-3 CatÃ¡logo",
-                                                                          "type":  "main",
-                                                                          "index":  0
-                                                                      }
-                                                                  ]
-                                                              ]
-                                                 },
-                        "Buscar Top-3 CatÃ¡logo":  {
-                                                       "main":  [
-                                                                    [
-                                                                        {
-                                                                            "node":  "Preparar Prompt Render",
-                                                                            "type":  "main",
-                                                                            "index":  0
-                                                                        }
-                                                                    ]
-                                                                ]
-                                                   },
                         "Preparar Prompt Render":  {
                                                        "main":  [
                                                                     [
@@ -2418,17 +2447,6 @@
                                                                         ]
                                                                     ]
                                                        },
-                        "Chatwoot - Crear ConversaciÃ³n":  {
-                                                               "main":  [
-                                                                            [
-                                                                                {
-                                                                                    "node":  "Chatwoot - Enviar Historial",
-                                                                                    "type":  "main",
-                                                                                    "index":  0
-                                                                                }
-                                                                            ]
-                                                                        ]
-                                                           },
                         "Chatwoot - Enviar Historial":  {
                                                             "main":  [
                                                                          [
@@ -2553,17 +2571,6 @@
                                                                         ]
                                                                     ]
                                                        },
-                        "Enviar Imagen Render":  {
-                                                     "main":  [
-                                                                  [
-                                                                      {
-                                                                          "node":  "Enviar Menu Post-Render",
-                                                                          "type":  "main",
-                                                                          "index":  0
-                                                                      }
-                                                                  ]
-                                                              ]
-                                                 },
                         "Cliente Ya Existente":  {
                                                      "main":  [
                                                                   [
@@ -2585,7 +2592,113 @@
                                                                               }
                                                                           ]
                                                                       ]
-                                                         }
+                                                         },
+                        "Chatwoot - Crear ConversaciÃ³n":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Save Chatwoot ConvId",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Save Chatwoot ConvId":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Chatwoot - Enviar Historial",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "CW Pausa - Buscar Contacto":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "CW Pausa - Buscar Conv",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "CW Pausa - Buscar Conv":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "CW Pausa - Resolve ConvId",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "CW Pausa - Resolve ConvId":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Chatwoot - Log Cliente Pausa",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Responder WA Generando":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Preparar Prompt Render",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Enviar Imagen Render":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Â¿Ãšltimo Render?",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Â¿Ãšltimo Render?":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Push Cierre History",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ],
+                                                               [
+                                                                   {
+                                                                       "node":  "Enviar Menu Post-Render",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Push Cierre History":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Enviar Cierre Renders",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                }
                     },
     "settings":  {
                      "executionOrder":  "v1",
@@ -2595,7 +2708,7 @@
     "staticData":  {
                        "global":  {
                                       "resetEpochs":  {
-                                                          "5218112817608":  1778124621229
+                                                          "5218112817608":  1778175480194
                                                       },
                                       "humanMode":  {
 
@@ -2619,18 +2732,18 @@
                                                                             "B: Agradezco su interÃ©s, pero solo atiendo consultas relacionadas con los servicios de Reyna Cocinas y CarpinterÃ­as Finas. Si tiene alguna pregunta sobre su proyecto o nuestros productos, con gusto le asisto."
                                                                         ],
                                                       "5218112817608":  [
+                                                                            "U: quizas tonos mas blancos",
+                                                                            "B: Perfecto, estoy generando una visualizaciÃ³n de su diseÃ±o. En un momento la recibirÃ¡.",
+                                                                            "U: 1",
+                                                                            "B: Â¿QuÃ© le gustarÃ­a ajustar o cambiar en el diseÃ±o actual? CuÃ©nteme para que podamos refinarlo.",
+                                                                            "U: no se ve como la primera foto",
+                                                                            "B: Ya generamos 2 versiones del diseÃ±o. Para poder avanzar con su proyecto y no demorarnos mÃ¡s, continuemos con su cotizaciÃ³n. Â¿CuÃ¡l es su nombre?",
+                                                                            "U: luis angel",
+                                                                            "B: Gracias, Luis Angel. Â¿CuÃ¡l es su correo electrÃ³nico?",
                                                                             "U: luis.sanchezag@gmail.com",
-                                                                            "B: Â¿CuÃ¡l es su presupuesto estimado para este proyecto? 1ï¸âƒ£ Menos de $30,000 MXN 2ï¸âƒ£ $30,000 â€“ $80,000 MXN 3ï¸âƒ£ MÃ¡s de $80,000 MXN",
+                                                                            "B: Â¡Excelente! Ahora, para darle una cotizaciÃ³n mÃ¡s precisa, Â¿cuÃ¡l es su presupuesto estimado para este proyecto? 1ï¸âƒ£ Menos de $30,000 MXN 2ï¸âƒ£ $30,000 â€“ $80,000 MXN 3ï¸âƒ£ MÃ¡s de $80,000 MXN",
                                                                             "U: 3",
-                                                                            "B: Â¡Listo! Hemos registrado su solicitud. Un asesor de Reyna le contactarÃ¡ a la brevedad. Â¡Muchas gracias!",
-                                                                            "U: hola",
-                                                                            "B: Bienvenid@ a *Reyna Cocinas y CarpinterÃ­as Finas* ðŸªµ 37 aÃ±os creando espacios Ãºnicos en Monterrey. Â¿En quÃ© le podemos ayudar hoy? 1ï¸âƒ£ Ver galerÃ­a de proyectos 2ï¸âƒ£ DiseÃ±emos tu mueble 3ï¸âƒ£ UbicaciÃ³n y horarios 4ï¸âƒ£ Hablar con un asesor Responda con el nÃºmero de su opciÃ³n.",
-                                                                            "U: hola",
-                                                                            "B: Bienvenid@ a *Reyna Cocinas y CarpinterÃ­as Finas* ðŸªµ 37 aÃ±os creando espacios Ãºnicos en Monterrey. Â¿En quÃ© le podemos ayudar hoy? 1ï¸âƒ£ Ver galerÃ­a de proyectos 2ï¸âƒ£ DiseÃ±emos tu mueble 3ï¸âƒ£ UbicaciÃ³n y horarios 4ï¸âƒ£ Hablar con un asesor Responda con el nÃºmero de su opciÃ³n.",
-                                                                            "U: hola",
-                                                                            "B: Bienvenid@ a *Reyna Cocinas y CarpinterÃ­as Finas* ðŸªµ 37 aÃ±os creando espacios Ãºnicos en Monterrey. Â¿En quÃ© le podemos ayudar hoy? 1ï¸âƒ£ Ver galerÃ­a de proyectos 2ï¸âƒ£ DiseÃ±emos tu mueble 3ï¸âƒ£ UbicaciÃ³n y horarios 4ï¸âƒ£ Hablar con un asesor Responda con el nÃºmero de su opciÃ³n.",
-                                                                            "U: hola",
-                                                                            "B: Hola Luis, quÃ© gusto saludarle nuevamente. Veo que ya tenemos su solicitud registrada para el siguiente proyecto: _[Closet o vestidor] - Mueble: Closet o vestidor. Estilo y color: Moderno, espacioso. Detalles: Ilumi..._. Nuestro equipo de ventas se pondrÃ¡ en contacto con usted muy pronto. Si necesita ajustar algo del diseÃ±o o tiene alguna duda, indÃ­quenos con gusto. ðŸªµ"
+                                                                            "B: Â¡Listo! Hemos registrado su solicitud. Un asesor de Reyna le contactarÃ¡ a la brevedad. Â¡Muchas gracias!"
                                                                         ],
                                                       "5212411354834":  [
                                                                             "U: 1",
@@ -2680,11 +2793,14 @@
                                                                            "generatedImageUrl":  "https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778123121/reyna_renders/5218112817608_1778123121126.png"
                                                                        },
                                                          "5218112817608":  {
-                                                                               "renderCount":  2,
-                                                                               "generatedImageUrl":  "https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778124720/reyna_renders/5218112817608_1778124720635.png",
-                                                                               "lastDescription":  "Mueble: Closet o vestidor. Estilo y color: Moderno, espacioso. Detalles: IluminaciÃ³n LED abundante."
+                                                                               "renderCount":  5,
+                                                                               "generatedImageUrl":  "https://res.cloudinary.com/dqxjg4qlb/image/upload/v1778175603/reyna_renders/5218112817608_1778175603300.png",
+                                                                               "lastDescription":  "IteraciÃ³n del diseÃ±o previo. DISEÃ‘O ANTERIOR: \"Mueble: Litera. Estilo y color: Minimalista en tonos oscuros. Detalles: N/A\". CAMBIO SOLICITADO: \"cambiar a tonos mÃ¡s blancos\". MANTENER IDÃ‰NTICO TODO LO DEMÃS del diseÃ±o anterior â€” mismas dimensiones, materiales, composiciÃ³n, encuadre, iluminaciÃ³n y estilo general; solo aplicar el cambio solicitado."
                                                                            }
-                                                     }
+                                                     },
+                                      "chatwootConvId":  {
+                                                             "5218112817608":  19
+                                                         }
                                   }
                    }
 }

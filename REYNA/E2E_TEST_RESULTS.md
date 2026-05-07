@@ -195,12 +195,12 @@
 |------|-------------|-----------|
 | 1 | Galería submenú 4 categorías | |
 | 2 | Diseñador 5 pasos + 2 renders (era 3) | |
-| 3 | Diseñador 1 render + cotizar | ✅ PASA (2026-05-06) |
+| 3 | Diseñador 1 render + cotizar | ✅ PASA (re-validado 2026-05-07) |
 | 4a | Bypass palabra bloqueada → log Sheet | 🟡 PARCIAL — LLM filtra antes del logger; no bloqueante |
 | 4b | Bypass otra palabra bloqueada → log Sheet | 🟡 PARCIAL — mismo motivo que 4a |
-| 5 | Cliente ya Calificado con proyecto | ✅ PASA (2026-05-06) |
+| 5 | Cliente ya Calificado con proyecto | ✅ PASA (re-validado 2026-05-07) |
 | 5b | Cliente Nuevo con proyecto pre-llenado | |
-| 6 | Handoff Chatwoot | SALTADO |
+| 6 | Handoff Chatwoot + toggle Resolve | ✅ PASA (2026-05-07) — handoff + agente responde + Resolve reactiva bot + cliente reabre conversación |
 | 7 | Limpiador 8h | |
 | 8 | /reset borra estado | |
 | 9 | Estado Calificado persiste tras cron | |
